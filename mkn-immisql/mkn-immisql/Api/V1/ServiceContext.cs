@@ -1,3 +1,5 @@
+using System;
+
 namespace MknImmiSql.Api.V1;
 
 public class ServiceContext
@@ -11,6 +13,6 @@ public class ServiceContext
     }
     private ServiceContext()
     {
-        TerminationToken = new TerminateToken();
+        TerminationToken = new TerminateToken(Guid.NewGuid().ToString("N"));
     }
 }

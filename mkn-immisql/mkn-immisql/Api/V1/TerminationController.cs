@@ -7,13 +7,12 @@ namespace MknImmiSql.Api.V1;
 
 public class TerminateToken
 {
-    [Required] public string Token { get; set; }
+    [Required] public String Token { get; set;  }
 
-    public TerminateToken()
+    public TerminateToken(String token)
     {
-        Token = Guid.NewGuid().ToString("N");
+        Token = token;
     }
-
     public override bool Equals(object other)
     {
         if (other is TerminateToken)
@@ -32,9 +31,9 @@ public class TerminateController : Controller
     }
     
     [HttpPost]
-    public IActionResult Post([FromBody] TerminateToken token)
+    public IActionResult Post( [FromBody] TerminateToken token )
     {
-        if ( !ModelState.IsValid )
+        if ( !ModelState.IsValid)
             return BadRequest( ModelState );
         
         if (token.Equals(ServiceContext.GetInstance().TerminationToken))
