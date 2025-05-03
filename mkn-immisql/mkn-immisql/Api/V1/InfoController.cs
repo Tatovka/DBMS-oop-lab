@@ -8,11 +8,14 @@ public class ServiceInfo
 {
     [Required] public String Timestamp { get; }
     [Required] public Int32 ProcessId { get; }
+    
+    [Required] public TerminateToken TerminationToken { get; }
 
     public ServiceInfo()
     {
         Timestamp = DateTime.Now.ToString( "O" );
         ProcessId = Environment.ProcessId;
+        TerminationToken = ServiceContext.GetInstance().TerminationToken;
     }
 }
 

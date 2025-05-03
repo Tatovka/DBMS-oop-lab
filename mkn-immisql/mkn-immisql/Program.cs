@@ -2,6 +2,7 @@ using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MknImmiSql.Api.V1;
 
 namespace MknImmiSql;
 
@@ -16,7 +17,7 @@ public static class Program
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddControllers();
-
+            ServiceContext.GetInstance();
             using( WebApplication app = builder.Build() )
             {
                 if( app.Environment.IsDevelopment() )
