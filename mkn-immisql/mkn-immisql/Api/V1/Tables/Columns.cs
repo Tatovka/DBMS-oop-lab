@@ -32,7 +32,7 @@ public class SqlColumn
         public ColumnBuilder WithName(string name) => WithName(new Word(name));
         public ColumnBuilder WithType(string type) => WithType(new Word(type));
         public ColumnBuilder HasPrimaryKey { get { 
-            _isPKey=true;
+            _isPKey = true;
             _isNullable = false; 
             return this; 
         } }
@@ -96,7 +96,7 @@ public class SqlColumn
         result.Name = Name;
         result.IsPKey = IsPKey;
         result.DefaultValue = DefaultValue.GetSchema();
-        result.Type = Type.typeName;
+        result.Type = Type.TypeName;
         result.IsNullable = Type.IsNullable;
         return result;
     }

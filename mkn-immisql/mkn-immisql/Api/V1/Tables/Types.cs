@@ -5,15 +5,15 @@ namespace MknImmiSql.Api.V1.Tables;
 
 public abstract class SqlType
 {
-    public bool IsNullable { get; protected set; }
+    public bool IsNullable { get; }
     
-    public abstract String typeName { get; }
+    public abstract String TypeName { get; }
 
     public abstract ISqlValue Parse(Word word);
 
     public SqlType(Boolean isNullable)
     {
-        isNullable = isNullable;
+        IsNullable = isNullable;
     }
 }
 
@@ -38,17 +38,17 @@ public class SqlBoolean : SqlType
             _value = value;
         }
     }
-    public override String typeName => "boolean";
+    public override String TypeName => "boolean";
     public override ISqlValue Parse(Word word)
     {
         if (word.Equals("NULL"))
         {
             if (IsNullable) return new SqlNull();
-            throw new Exception($"Cannot assign null to non-nullable {typeName}");
+            throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (bool.TryParse(word.ToString(), out bool result))
             return new SqlBoolValue(result);
-        throw new ArgumentException($"Cannot parse {typeName} from value {word}");
+        throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
     public SqlBoolean(bool isNullable) : base(isNullable){ }
 }
@@ -64,17 +64,17 @@ public class SqlInteger : SqlType
             _value = value;
         }
     }
-    public override String typeName => "integer";
+    public override String TypeName => "integer";
     public override ISqlValue Parse(Word word)
     {
         if (word.Equals("NULL"))
         {
             if (IsNullable) return new SqlNull();
-            throw new Exception($"Cannot assign null to non-nullable {typeName}");
+            throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (Int64.TryParse(word.ToString(), out Int64 result))
             return new SqlIntegerValue(result);
-        throw new ArgumentException($"Cannot parse {typeName} from value {word}");
+        throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
     public SqlInteger(bool isNullable) : base(isNullable){ }
 }
@@ -90,17 +90,17 @@ public class SqlFloat : SqlType
             _value = value;
         }
     }
-    public override String typeName => "float";
+    public override String TypeName => "float";
     public override ISqlValue Parse(Word word)
     {
         if (word.Equals("NULL"))
         {
             if (IsNullable) return new SqlNull();
-            throw new Exception($"Cannot assign null to non-nullable {typeName}");
+            throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (Double.TryParse(word.ToString(), out Double result))
             return new SqlFloatValue(result);
-        throw new ArgumentException($"Cannot parse {typeName} from value {word}");
+        throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
     public SqlFloat(bool isNullable) : base(isNullable){ }
 }
@@ -116,20 +116,20 @@ public class SqlString : SqlType
             _value = value;
         }
     }
-    public override String typeName => "string";
+    public override String TypeName => "string";
     public override ISqlValue Parse(Word word)
     {
         if (word.Equals("NULL"))
         {
             if (IsNullable) return new SqlNull();
-            throw new Exception($"Cannot assign null to non-nullable {typeName}");
+            throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (word.IsString)
         {
             var value = word.ToString();
             return new SqlStringValue(value.Substring(1, value.Length - 2));
         }
-        throw new ArgumentException($"Cannot parse {typeName} from value {word}");
+        throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
     public SqlString(bool isNullable) : base(isNullable){ }
 }
@@ -145,17 +145,17 @@ public class SqlSerial : SqlType
             _value = value;
         }
     }
-    public override String typeName => "serial";
+    public override String TypeName => "serial";
     public override ISqlValue Parse(Word word)
     {
         if (word.Equals("NULL"))
         {
             if (IsNullable) return new SqlNull();
-            throw new Exception($"Cannot assign null to non-nullable {typeName}");
+            throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (Int64.TryParse(word.ToString(), out Int64 result))
             return new SqlSerialValue(result);
-        throw new ArgumentException($"Cannot parse {typeName} from value {word}");
+        throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
     public SqlSerial(bool isNullable) : base(isNullable){ }
 }

@@ -14,12 +14,12 @@ public class QueryRequest
 public class QueryResponse
 {
     [Required] public TableSchemaInfo Schema { get; set; }
-    [Required] public String[][] TableRows { get; set; }
+    [Required] public String[][] Result { get; set; }
 
     public QueryResponse(Table table)
     {
         Schema = table.GetSchema().Schema;
-        TableRows = table.Rows;
+        Result = table.Rows;
     }
 }
 
