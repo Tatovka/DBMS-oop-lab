@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MknImmiSql.Api.V1;
+using MknImmiSql.Api.V1.Parser;
 
 namespace MknImmiSql;
 
@@ -10,6 +11,8 @@ public static class Program
 {
     public static void Main( String[] argv )
     {
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        var mainBlock = Parser.Parse("CREATE TABLE tab3 (\n    \"id\" String Primary Key,\n    column BOOLEAN DEFAULT TRUE\n);");
         try
         {
             WebApplicationBuilder builder = WebApplication.CreateBuilder( argv );
