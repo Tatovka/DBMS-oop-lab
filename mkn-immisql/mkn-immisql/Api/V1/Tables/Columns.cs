@@ -97,6 +97,7 @@ public class SqlColumn
         result.IsPKey = IsPKey;
         result.DefaultValue = DefaultValue.GetSchema();
         result.Type = Type.typeName;
+        result.IsNullable = Type.IsNullable;
         return result;
     }
     public static ColumnBuilder GetBuilder => new ColumnBuilder(); 

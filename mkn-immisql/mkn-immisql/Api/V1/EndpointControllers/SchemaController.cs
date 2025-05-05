@@ -20,6 +20,6 @@ public class SchemaController: Controller
             return BadRequest(new QueryResponse(Table.Failed));
         if(Database.TryGetTable(input.Name, out Table? output))
             return Ok(output!.GetSchema());
-        return BadRequest(Table.Failed);
+        return NotFound(Table.Failed);
     }
 }

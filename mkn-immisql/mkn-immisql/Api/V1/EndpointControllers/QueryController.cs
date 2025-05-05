@@ -42,6 +42,8 @@ public class QueryController : Controller
             Console.WriteLine(e);
             return BadRequest(new QueryResponse(Table.Failed));
         }
-        return Ok(new QueryResponse(command.Execute()));
+
+        var commandResult = command.Execute();
+        return StatusCode(command.StatusCode, new QueryResponse(commandResult));
     }
 }

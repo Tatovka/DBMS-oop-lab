@@ -9,6 +9,7 @@ using Tables;
 public interface ICommand
 {
     public string CommandName { get; }
+    public Int32 StatusCode { get; }
     Table Execute();
 }
 
@@ -17,7 +18,9 @@ public class CreateTableCommand : ICommand
     private readonly String tableName;
     public readonly SqlColumn[] columns;
     private readonly int primaryKeyIndex = -1;
-    
+
+    public int StatusCode { get; private set; }
+
     enum ColumnParseState
     {
         Name, Type, Extra, Finished
@@ -30,6 +33,7 @@ public class CreateTableCommand : ICommand
     // columnN_name TYPE [NOT NULL] [DEFAULT value],
     // );
     public string CommandName => "CREATE TABLE";
+    private readonly bool _ifNotExists = false;
     public CreateTableCommand(List<ParserNode> args)
     {
         int nameIndex = 0;
@@ -44,6 +48,7 @@ public class CreateTableCommand : ICommand
             if (!args[1].Equals("NOT") || !args[2].Equals("EXISTS")) 
                 throw new Exception($"Invalid argument to {CommandName} {args[0]} {args[1]} {args[2]}\n" +
                                     "Expected: IF NOT EXISTS");
+            _ifNotExists = true;
         }
         
         if (args.Count != 2 + nameIndex) 
@@ -74,7 +79,19 @@ public class CreateTableCommand : ICommand
             }
         }
     }
-    public Table Execute() => Database.TryAddTable(tableName, new Table(columns)) ? Table.Success : Table.Failed;
+
+    public Table Execute()
+    {
+        if (Database.TryAddTable(tableName, new Table(columns)))
+        {
+            StatusCode = 200;
+            return Table.Success;
+        }
+        
+        StatusCode = _ifNotExists? 200 : 409;
+        return Table.Failed;
+    }
+
     private static SqlColumn ParseColumn(IEnumerator<ParserNode> arg)
     {
         ColumnParseState state = ColumnParseState.Name;
@@ -143,7 +160,8 @@ public class CreateTableCommand : ICommand
 public class DropTableCommand : ICommand
 {
     private String tableName;
-    private Boolean success;
+    public Int32 StatusCode { get; private set; }
+    private bool _ifExists = false;
     public string CommandName => "DROP TABLE";
     public DropTableCommand(List<ParserNode> args)
     {
@@ -158,6 +176,7 @@ public class DropTableCommand : ICommand
             if (!args[1].Equals("EXISTS")) 
                 throw new Exception($"Invalid argument to {CommandName} {args[0]} {args[1]}\n" +
                                     "Expected: IF EXISTS");
+            _ifExists = true;
         }
         if (args.Count != 1 + nameIndex) 
             throw new Exception($"Wrong number of arguments to {CommandName}: {args.Count}\n" +
@@ -166,5 +185,15 @@ public class DropTableCommand : ICommand
             tableName = nameWord.ToString();
         else throw new Exception("table name should be a Word");
     }
-    public Table Execute() => Database.TryDropTable(tableName) ? Table.Success : Table.Failed;
+
+    public Table Execute()
+    {
+        if (Database.TryDropTable(tableName))
+        {
+            StatusCode = 200;
+            return Table.Success;
+        }
+        StatusCode = _ifExists? 200 : 404;
+        return Table.Failed;
+    }
 }
