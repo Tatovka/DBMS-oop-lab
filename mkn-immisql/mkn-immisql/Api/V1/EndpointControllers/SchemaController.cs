@@ -16,6 +16,8 @@ public class SchemaController: Controller
     [HttpPost]
     public IActionResult Post([FromBody] SchemaControllerInput input)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(new QueryResponse(Table.Failed));
         if(Database.TryGetTable(input.Name, out Table? output))
             return Ok(output!.GetSchema());
         return BadRequest(Table.Failed);
