@@ -12,7 +12,6 @@ public static class Program
     public static void Main( String[] argv )
     {
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-        var mainBlock = Parser.Parse("CREATE TABLE tab3 (\n    \"id\" String Primary Key,\n    column BOOLEAN DEFAULT TRUE\n);");
         try
         {
             WebApplicationBuilder builder = WebApplication.CreateBuilder( argv );

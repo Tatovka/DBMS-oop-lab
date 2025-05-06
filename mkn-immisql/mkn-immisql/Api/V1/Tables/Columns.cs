@@ -1,6 +1,6 @@
-using MknImmiSql.Api.V1.Tables;
+using MknImmiSql.Api.V1.Parser;
 
-namespace MknImmiSql.Api.V1.Parser;
+namespace MknImmiSql.Api.V1.Tables;
 using System;
 using System.Collections.Generic;
 
@@ -73,31 +73,31 @@ public class SqlColumn
     }
     public readonly String Name;
     public readonly Boolean IsPKey;
-    private List<ISqlValue> rows = new List<ISqlValue>();
-    public readonly SqlType Type;
-    public readonly DefaultSqlValue DefaultValue;
+    private readonly List<ISqlValue> _rows = new ();
+    private readonly SqlType _type;
+    private readonly DefaultSqlValue _defaultValue;
     private SqlColumn(SqlType type, String name, Boolean isPKey, DefaultSqlValue defaultValue)
     {
-        Type = type;
+        _type = type;
         Name = name;
         IsPKey = isPKey;
-        DefaultValue = defaultValue;
+        _defaultValue = defaultValue;
     }
     public void AddRow(Word value)
     {
-        rows.Add(Type.Parse(value));
+        _rows.Add(_type.Parse(value));
     }
 
-    public string AtRow(int index) => rows[index].Value;
+    public string AtRow(int index) => _rows[index].Value;
     
     public TableSchemaColumnInfo GetSchema()
     {
         TableSchemaColumnInfo result = new ();
         result.Name = Name;
         result.IsPKey = IsPKey;
-        result.DefaultValue = DefaultValue.GetSchema();
-        result.Type = Type.TypeName;
-        result.IsNullable = Type.IsNullable;
+        result.DefaultValue = _defaultValue.GetSchema();
+        result.Type = _type.TypeName;
+        result.IsNullable = _type.IsNullable;
         return result;
     }
     public static ColumnBuilder GetBuilder => new ColumnBuilder(); 

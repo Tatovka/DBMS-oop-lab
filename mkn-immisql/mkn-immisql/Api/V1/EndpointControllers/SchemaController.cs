@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using MknImmiSql.Api.V1.Tables;
 
-namespace MknImmiSql.Api.V1;
+namespace MknImmiSql.Api.V1.EndpointControllers;
 
 public class SchemaControllerInput
 {
@@ -17,7 +17,7 @@ public class SchemaController: Controller
     public IActionResult Post([FromBody] SchemaControllerInput input)
     {
         if (!ModelState.IsValid)
-            return BadRequest(new QueryResponse(Table.Failed));
+            return BadRequest(ModelState);
         if(Database.TryGetTable(input.Name, out Table? output))
             return Ok(output!.GetSchema());
         return NotFound(Table.Failed);

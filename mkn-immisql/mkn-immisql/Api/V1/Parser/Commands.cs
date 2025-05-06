@@ -15,9 +15,9 @@ public interface ICommand
 
 public class CreateTableCommand : ICommand
 {
-    private readonly String tableName;
-    public readonly SqlColumn[] columns;
-    private readonly int primaryKeyIndex = -1;
+    private readonly String _tableName;
+    private readonly SqlColumn[] _columns;
+    private readonly bool _hasPk;
 
     public int StatusCode { get; private set; }
 
@@ -34,7 +34,7 @@ public class CreateTableCommand : ICommand
     // );
     public string CommandName => "CREATE TABLE";
     private readonly bool _ifNotExists = false;
-    public CreateTableCommand(List<ParserNode> args)
+    public CreateTableCommand(List<IParserNode> args)
     {
         int nameIndex = 0;
         if (!(args[0] is Word)) throw new Exception($"Invalid argument to {CommandName}");
@@ -55,26 +55,26 @@ public class CreateTableCommand : ICommand
             throw new Exception($"Wrong number of arguments to {CommandName}: {args.Count}\n" +
                                 $"Expected: {2 + nameIndex}");
         
-        List<ParserNode> colArgs;
+        List<IParserNode> colArgs;
         if (args[nameIndex] is Word nameWord && args[nameIndex + 1] is Block argsBlock)
         {
-            tableName = nameWord.ToString(); 
+            _tableName = nameWord.ToString(); 
             if (argsBlock.HasBlocks) throw new Exception($"{CommandName} arguments should not contain blocks");
-            colArgs = argsBlock.children;
+            colArgs = argsBlock.Children;
             if (colArgs.Count == 0 || !colArgs.Last().Equals(",")) colArgs.Add(new Word(","));
         }
         //Parsing columns
         else throw new Exception($"Invalid argument to {CommandName}: " +
                             $"{args[nameIndex].GetType()}, {args[nameIndex+1].GetType()}\n Expected: Word, Block");
         int columnsCount = colArgs.Count(word => word.Equals(","));
-        columns = new SqlColumn[columnsCount];
-        IEnumerator<ParserNode> argEnumerator = colArgs.GetEnumerator();
+        _columns = new SqlColumn[columnsCount];
+        IEnumerator<IParserNode> argEnumerator = colArgs.GetEnumerator();
         for (int curColumn = 0; curColumn < columnsCount; curColumn++)
         {
-            columns[curColumn] = ParseColumn(argEnumerator);
-            if (columns[curColumn].IsPKey)
+            _columns[curColumn] = ParseColumn(argEnumerator);
+            if (_columns[curColumn].IsPKey)
             {
-                if (primaryKeyIndex == -1) primaryKeyIndex = curColumn;
+                if (!_hasPk) _hasPk = true;
                 else throw new Exception("Primary key cannot be given twice");
             }
         }
@@ -82,7 +82,7 @@ public class CreateTableCommand : ICommand
 
     public Table Execute()
     {
-        if (Database.TryAddTable(tableName, new Table(columns)))
+        if (Database.TryAddTable(_tableName, new Table(_columns)))
         {
             StatusCode = 200;
             return Table.Success;
@@ -92,7 +92,7 @@ public class CreateTableCommand : ICommand
         return Table.Failed;
     }
 
-    private static SqlColumn ParseColumn(IEnumerator<ParserNode> arg)
+    private static SqlColumn ParseColumn(IEnumerator<IParserNode> arg)
     {
         ColumnParseState state = ColumnParseState.Name;
         SqlColumn.ColumnBuilder builder = new();
@@ -159,11 +159,11 @@ public class CreateTableCommand : ICommand
 
 public class DropTableCommand : ICommand
 {
-    private String tableName;
+    private readonly String _tableName;
     public Int32 StatusCode { get; private set; }
-    private bool _ifExists = false;
+    private readonly bool _ifExists;
     public string CommandName => "DROP TABLE";
-    public DropTableCommand(List<ParserNode> args)
+    public DropTableCommand(List<IParserNode> args)
     {
         int nameIndex = 0;
         if (!(args[0] is Word)) throw new Exception($"Invalid argument to {CommandName}");
@@ -182,13 +182,13 @@ public class DropTableCommand : ICommand
             throw new Exception($"Wrong number of arguments to {CommandName}: {args.Count}\n" +
                                 $"Expected: {1 + nameIndex}");
         if (args[nameIndex] is Word nameWord)
-            tableName = nameWord.ToString();
+            _tableName = nameWord.ToString();
         else throw new Exception("table name should be a Word");
     }
 
     public Table Execute()
     {
-        if (Database.TryDropTable(tableName))
+        if (Database.TryDropTable(_tableName))
         {
             StatusCode = 200;
             return Table.Success;

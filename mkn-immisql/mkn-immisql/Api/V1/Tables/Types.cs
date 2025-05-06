@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using MknImmiSql.Api.V1.Parser;
 
 namespace MknImmiSql.Api.V1.Tables;
@@ -31,7 +32,7 @@ public class SqlBoolean : SqlType
 {
     public class SqlBoolValue : ISqlValue
     {
-        public readonly Boolean _value;
+        private readonly Boolean _value;
         public String Value => _value.ToString().ToLower();
         public SqlBoolValue(Boolean value)
         {
@@ -57,7 +58,7 @@ public class SqlInteger : SqlType
 {
     public class SqlIntegerValue : ISqlValue
     {
-        public readonly Int64 _value;
+        private readonly Int64 _value;
         public String Value => _value.ToString();
         public SqlIntegerValue(Int64 value)
         {
@@ -83,8 +84,8 @@ public class SqlFloat : SqlType
 {
     public class SqlFloatValue : ISqlValue
     {
-        public readonly Double _value;
-        public String Value => _value.ToString();
+        private readonly Double _value;
+        public String Value => _value.ToString(CultureInfo.InvariantCulture);
         public SqlFloatValue(Double value)
         {
             _value = value;
@@ -109,7 +110,7 @@ public class SqlString : SqlType
 {
     public class SqlStringValue : ISqlValue
     {
-        public readonly String _value;
+        private readonly String _value;
         public String Value => _value;
         public SqlStringValue(String value)
         {
@@ -138,7 +139,7 @@ public class SqlSerial : SqlType
 {
     public class SqlSerialValue : ISqlValue
     {
-        public readonly Int64 _value;
+        private readonly Int64 _value;
         public String Value => _value.ToString();
         public SqlSerialValue(Int64 value)
         {
@@ -188,5 +189,3 @@ public class DefaultSqlValue
         return result;
     }
 }
-
-

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MknImmiSql.Api.V1.Parser;
 using MknImmiSql.Api.V1.Tables;
 
-namespace MknImmiSql.Api.V1;
+namespace MknImmiSql.Api.V1.EndpointControllers;
 
 public class QueryRequest
 { 
@@ -30,7 +30,7 @@ public class QueryController : Controller
     public IActionResult Post([FromBody] QueryRequest request)
     {
         if (!ModelState.IsValid)
-            return BadRequest(new QueryResponse(Table.Failed));
+            return BadRequest(ModelState);
         ICommand command;
         try
         {
@@ -40,7 +40,7 @@ public class QueryController : Controller
         catch (Exception e)
         {
             Console.WriteLine(e);
-            return BadRequest(new QueryResponse(Table.Failed));
+            return BadRequest(e);
         }
 
         var commandResult = command.Execute();

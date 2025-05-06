@@ -1,72 +1,45 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace MknImmiSql.Api.V1.Parser;
 
-public abstract class ParserNode
-{
-   public abstract void Print();
-   public abstract bool Equals(ParserNode other);
 
-   public virtual bool Equals(String str)
-   {
-       return false;
-   }
-   
-}
 
-public class Word : ParserNode
+public class Word : IParserNode
 {
-    public readonly String value;
-    public static readonly Word Empty = new Word(""); 
+    private readonly String _value;
+    public static readonly Word Empty = new (String.Empty); 
+    private static readonly Regex NameFormat = new (@"^[\w-_]+$");
     
-    private static readonly Regex nameFormat = new Regex(@"^[\w-_]+$");
+    public bool IsString => (_value.Length > 0) && (_value[0] == '\'');
     
-    public bool IsString
-    {
-        get => (value.Length > 0) && (value[0] == '\'');
-    }
-    public override void Print()
-    {
-        Console.WriteLine(value);
-    }
     public Word(String str)
     {
-        value = str;
+        _value = str;
     }
 
-    public override bool Equals(ParserNode other)
+    public bool Equals(IParserNode other)
     {
-        if (other is Word) 
-            return value.Equals((other as Word).value, StringComparison.CurrentCultureIgnoreCase);
+        if (other is Word otherWord) 
+            return _value.Equals(otherWord._value, StringComparison.InvariantCultureIgnoreCase);
         return false;
     }
-    public override bool Equals(String str) => str.Equals(value, StringComparison.CurrentCultureIgnoreCase);
+    public bool Equals(String str) => str.Equals(_value, StringComparison.InvariantCultureIgnoreCase);
     
     public override string ToString()
     {
-        return value;
+        return _value;
     }
-    
-    
-    public bool GetBoolean(out bool res) => bool.TryParse(value, out res);
-    public bool GetInteger(out Int64 res) => Int64.TryParse(value, out res);
-    public bool GetFloat(out double res) => double.TryParse(value, out res);
-    public bool GetString(out string res)
-    {
-        res = value.Substring(1, value.Length - 1);
-        return IsString;
-    }
-    
-    public bool IsName => (value[0] == '"' && value.Last() == '"') || nameFormat.IsMatch(value);
+    public bool IsName => (_value[0] == '"' && _value.Last() == '"') || NameFormat.IsMatch(_value);
     
 }
 
-public class Block : ParserNode
+public class Block : IParserNode
 {
-    public List<ParserNode> children = new();
+    public List<IParserNode> Children = new();
 
     public readonly bool HasBlocks;
     public Block(List<String> words)
@@ -74,13 +47,13 @@ public class Block : ParserNode
         for (int i = 0; i < words.Count; i++)
         {
             if (!words[i].Contains('(') && !words[i].Contains(')') || words[i][0]=='\'' || words[i][0] == '"')
-                children.Add(new Word(words[i]));
+                Children.Add(new Word(words[i]));
             
             else if (words[i].Contains('('))
             {
                 Int32 index = words[i].IndexOf('(');
                 if (index > 0)
-                    children.Add(new Word(words[i].Substring(0,index)));
+                    Children.Add(new Word(words[i].Substring(0,index)));
                 if (index == words[i].Length - 1) words.RemoveAt(i);
                 else words[i] = words[i].Substring(index + 1, words[i].Length - index - 1);
                 Int32 bracketsOpen = 1;
@@ -105,33 +78,32 @@ public class Block : ParserNode
                     if (bracketsOpen == 0) break;
                 }
                 if (bracketsOpen != 0) throw new Exception();
-                children.Add(new Block(blockWords));
+                Children.Add(new Block(blockWords));
                 HasBlocks = true;
                 i = wordIndex;
             }
         }
-        if (children.Last().Equals(";")) children.RemoveAt(children.Count - 1);
+        if (Children.Last().Equals(";")) Children.RemoveAt(Children.Count - 1);
     }
-    public override void Print()
+    public override String ToString()
     {
-        Console.WriteLine("Block start");
-        foreach (var child in children)
+        StringBuilder result = new ();
+        result.AppendLine("Block start");
+        foreach (var child in Children)
         {
-            child.Print();
+            result.Append($"{child.ToString()} ");
         }
-        Console.WriteLine("Block end");
+        result.AppendLine("Block end");
+        return result.ToString();
     }
-
-    public override bool Equals(ParserNode other)
+    public bool Equals(IParserNode other)
     {
         return other is Block;
     }
-    
 }
 
-public class Parser
+public static class Parser
 {
-    public static readonly String[] Typenames = { "BOOLEAN", "INTEGER", "FLOAT", "STRING", "SERIAL"};
     public static Block Parse(String query)
     { 
         Console.WriteLine(query);
@@ -154,7 +126,7 @@ public class Parser
         return new Block(words);
     }
 
-    public static List<String> FindNames(String subStr)
+    private static List<String> FindNames(String subStr)
     {
         Regex findNames = new Regex("\"[^\"]*\"", RegexOptions.CultureInvariant);
         var names = findNames.Matches(subStr).Select(m => m.Value).ToList();
@@ -169,7 +141,7 @@ public class Parser
         return words;
     }
 
-    public static List<String> FindCommas(String subStr)
+    private static List<String> FindCommas(String subStr)
     {
         var woCommas = subStr.Split(',');
         var words = new List<String>();
@@ -184,7 +156,7 @@ public class Parser
     
     public static ICommand GetCommand(Block block)
     {
-        var nodes = block.children;
+        var nodes = block.Children;
         if (nodes.Count() < 2 ) throw new Exception("Cannot found command");
         
         if (nodes[1].Equals("Table"))
