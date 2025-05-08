@@ -39,8 +39,8 @@ public class QueryController : Controller
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            return BadRequest(e);
+            Console.WriteLine(e.Message);
+            return BadRequest(e.Message);
         }
 
         var commandResult = command.Execute();

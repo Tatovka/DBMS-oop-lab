@@ -12,6 +12,13 @@ public static class Program
     public static void Main( String[] argv )
     {
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        Keyword.AddKeyword(new Word("IF NOT EXISTS"));
+        Keyword.AddKeyword(new Word("IF EXISTS"));
+        Keyword.AddKeyword(new Word("CREATE TABLE"));
+        Keyword.AddKeyword(new Word("PRIMARY KEY"));
+        Keyword.AddKeyword(new Word("DROP TABLE"));
+        Keyword.AddKeyword(new Word("DEFAULT"));
+        Keyword.AddKeyword(new Word("NOT NULL"));
         try
         {
             WebApplicationBuilder builder = WebApplication.CreateBuilder( argv );
