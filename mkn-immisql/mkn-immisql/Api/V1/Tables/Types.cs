@@ -23,14 +23,14 @@ public interface ISqlValue
     public string Value { get; }
 }
 
-public class SqlNull : ISqlValue
+public readonly struct SqlNull : ISqlValue
 {
     public string Value => "NULL";
 }
 
 public class SqlBoolean : SqlType
 {
-    public class SqlBoolValue : ISqlValue
+    public readonly struct SqlBoolValue : ISqlValue
     {
         private readonly Boolean _value;
         public String Value => _value.ToString().ToLower();
@@ -56,7 +56,7 @@ public class SqlBoolean : SqlType
 
 public class SqlInteger : SqlType
 {
-    public class SqlIntegerValue : ISqlValue
+    public readonly struct SqlIntegerValue : ISqlValue
     {
         private readonly Int64 _value;
         public String Value => _value.ToString();
@@ -82,7 +82,7 @@ public class SqlInteger : SqlType
 
 public class SqlFloat : SqlType
 {
-    public class SqlFloatValue : ISqlValue
+    public readonly struct SqlFloatValue : ISqlValue
     {
         private readonly Double _value;
         public String Value => _value.ToString(CultureInfo.InvariantCulture);
@@ -108,10 +108,10 @@ public class SqlFloat : SqlType
 
 public class SqlString : SqlType
 {
-    public class SqlStringValue : ISqlValue
+    public readonly struct SqlStringValue : ISqlValue
     {
         private readonly String _value;
-        public String Value => _value;
+        public String Value => $"'{_value}'";
         public SqlStringValue(String value)
         {
             _value = value;
@@ -137,7 +137,7 @@ public class SqlString : SqlType
 
 public class SqlSerial : SqlType
 {
-    public class SqlSerialValue : ISqlValue
+    public readonly struct SqlSerialValue : ISqlValue
     {
         private readonly Int64 _value;
         public String Value => _value.ToString();

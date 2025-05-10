@@ -1,3 +1,4 @@
+using System.Linq;
 using MknImmiSql.Api.V1.Parser;
 
 namespace MknImmiSql.Api.V1.Tables;
@@ -10,7 +11,7 @@ public class SqlColumn
     {
         private Word? _type;
         private string? _name;
-        private bool _isPKey = false;
+        private bool _isPKey;
         private bool _isNullable = true;
         private Word? _defaultValue;
         
@@ -89,7 +90,19 @@ public class SqlColumn
     }
 
     public string AtRow(int index) => _rows[index].Value;
-    
+
+    public ISqlValue Parse(Word word)
+    {
+        if (word.Equals("Default"))
+        {
+            if (_defaultValue.IsSpecified)
+                _rows.Add(_defaultValue.Value);
+            throw new Exception("Cannot assign default value, it is not specified");
+        }
+        _rows.Add(_type.Parse(word));
+        return _rows.Last();
+    }
+
     public TableSchemaColumnInfo GetSchema()
     {
         TableSchemaColumnInfo result = new ();
@@ -100,5 +113,15 @@ public class SqlColumn
         result.IsNullable = _type.IsNullable;
         return result;
     }
-    public static ColumnBuilder GetBuilder => new ColumnBuilder(); 
+    public static ColumnBuilder GetBuilder => new ColumnBuilder();
+
+    public SqlColumn CopyThis()
+    {
+        var result =  new SqlColumn(_type, Name, IsPKey, _defaultValue);
+        foreach (var val in _rows)
+        {
+            result._rows.Add(val);
+        }
+        return result;
+    }
 }

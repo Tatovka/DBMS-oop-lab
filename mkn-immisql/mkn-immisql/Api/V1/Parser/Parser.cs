@@ -82,7 +82,48 @@ public static class Parser
         
         if (nodes[0].Equals("DROP TABLE"))
             return new DropTableCommand(nodes.Skip(1).ToList());
+
+        if (nodes[0].Equals("INSERT INTO"))
+            return new InsertCommand(nodes.Skip(1).ToList());
         
         throw new Exception($"Unknown command {nodes[0]} {nodes[1]}");
+    }
+
+    public static List<Word> GetArgList(IParserNode node, out Int32 count)
+    {
+        if (node is Block argsBlock)
+        {
+            if (argsBlock.HasBlocks) throw new Exception("Arguments list should not contain blocks");
+            var colArgs = argsBlock.Children;
+            count = argsBlock.CountArgs;
+            if (colArgs.Count == 0 || !colArgs.Last().Equals(","))
+            {
+                colArgs.Add(new Word(","));
+                count++;
+            }
+            var result = new List<Word>();
+            foreach (var arg in colArgs)
+            {
+                result.Add((arg as Word)!);
+            }
+            return result;
+        }
+        throw new Exception("Invalid argument: expected Block as arguments list");
+    }
+
+    public static List<List<Word>> SplitArgList(List<Word> list)
+    {
+        List<List<Word>> result = new();
+        List<Word> cur = new();
+        foreach (var word in list)
+        {
+            if (word.Equals(","))
+            {
+                result.Add(cur);
+                cur = new();
+            }
+            else cur.Add(word);
+        }
+        return result;
     }
 }

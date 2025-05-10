@@ -37,6 +37,7 @@ public class CreateTableCommand : ICommand
             nameIndex++;
             _ifNotExists = true;
         }
+        
         //Parsing name
         if (args.Count != 2 + nameIndex) 
             throw new Exception($"Wrong number of arguments to {CommandName}: {args.Count}\n" +
@@ -44,25 +45,13 @@ public class CreateTableCommand : ICommand
         if (args[nameIndex] is Word nameWord && nameWord.IsName)
             _tableName = nameWord.ToString();
         else throw new Exception("table name should be a Word");
+        
         //Parsing argument block
-        List<IParserNode> colArgs;
-        int columnsCount;
-        if (args[nameIndex + 1] is Block argsBlock)
-        {
-            if (argsBlock.HasBlocks) throw new Exception($"{CommandName} arguments should not contain blocks");
-            colArgs = argsBlock.Children;
-            columnsCount = argsBlock.CountArgs;
-            if (colArgs.Count == 0 || !colArgs.Last().Equals(","))
-            {
-                colArgs.Add(new Word(","));
-                columnsCount++;
-            }
-        }
-        else throw new Exception($"Invalid argument to {CommandName}: " +
-                                 $"{args[nameIndex].GetType()}, {args[nameIndex+1].GetType()}\n Expected: Word, Block");
+        List<Word> colArgs = Parser.GetArgList(args[nameIndex + 1], out int columnsCount);
+        
         //Parsing columns
         _columns = new SqlColumn[columnsCount];
-        IEnumerator<IParserNode> argEnumerator = colArgs.GetEnumerator();
+        IEnumerator<Word> argEnumerator = colArgs.GetEnumerator();
         for (int curColumn = 0; curColumn < columnsCount; curColumn++)
         {
             _columns[curColumn] = ParseColumn(argEnumerator);
@@ -87,13 +76,13 @@ public class CreateTableCommand : ICommand
         return Table.Failed;
     }
 
-    private static SqlColumn ParseColumn(IEnumerator<IParserNode> arg)
+    private static SqlColumn ParseColumn(IEnumerator<Word> arg)
     {
         ColumnParseState state = ColumnParseState.Name;
         SqlColumn.ColumnBuilder builder = new();
         while(state != ColumnParseState.Finished && arg.MoveNext())
         {
-            var value = (arg.Current as Word)!;
+            var value = arg.Current;
             switch (state)
             {
                 case ColumnParseState.Name:
@@ -131,8 +120,7 @@ public class CreateTableCommand : ICommand
                     if (value.Equals("DEFAULT"))
                     {
                         arg.MoveNext();
-                        if (arg.Current is Word defaultWord)
-                            builder = builder.WithDefault(defaultWord);
+                        builder = builder.WithDefault(arg.Current);
                         break;
                     }
                     throw new Exception($"Invalid argument {value}");

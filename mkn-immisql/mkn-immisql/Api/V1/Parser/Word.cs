@@ -8,6 +8,7 @@ public class Word : IParserNode
 {
     private readonly String _value;
     public static readonly Word Empty = new (String.Empty); 
+    public static readonly Word Default = new ("Default"); 
     private static readonly Regex NameFormat = new (@"^[\w-_]+$");
     
     public bool IsString => (_value.Length > 0) && (_value[0] == '\'');
