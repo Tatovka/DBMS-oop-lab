@@ -99,6 +99,8 @@ public class SqlColumn
         {
             if (_defaultValue.IsSpecified)
                 _rows.Add(_defaultValue.Value);
+            else if (Type is SqlSerial)
+                _rows.Add(Type.Parse(word));
             else throw new Exception("Cannot assign default value, it is not specified");
         }
         else _rows.Add(Type.Parse(word));
@@ -117,12 +119,22 @@ public class SqlColumn
     }
     public static ColumnBuilder GetBuilder => new ColumnBuilder();
 
-    public SqlColumn CopyThis()
+    public virtual SqlColumn CopyThis()
     {
         var result =  new SqlColumn(Type, Name, IsPKey, _defaultValue);
         foreach (var val in _rows)
         {
             result._rows.Add(val);
+        }
+        return result;
+    }
+    
+    public virtual SqlColumn CopyRows(Int32[] indexes)
+    {
+        SqlColumn result =  new SqlColumn(Type, Name, IsPKey, _defaultValue);
+        foreach (var index in indexes)
+        {
+            result._rows.Add(_rows[index]);
         }
         return result;
     }
@@ -140,5 +152,29 @@ public class SerialColumn : SqlColumn
         if (!word.Equals(Word.Default)) throw new ArgumentException("Serial value sets automatically");
         _rows.Add(Type.Parse(new Word($"{++_curValue}")));
         return _rows.Last();
+    }
+    public override SqlColumn CopyThis()
+    {
+        var result =  new SerialColumn(Name);
+        foreach (var val in _rows)
+        {
+            result._rows.Add(val);
+        }
+
+        result._curValue = _curValue;
+        return result;
+    }
+    
+    public override SqlColumn CopyRows(Int32[] indexes)
+    {
+        SerialColumn result =  new SerialColumn(Name);
+        Int64 maxValue = 0;
+        foreach (var index in indexes)
+        {
+            maxValue = Math.Max(maxValue, Int64.Parse(_rows[index].Value));   
+            result._rows.Add(_rows[index]);
+        }
+        result._curValue = maxValue;
+        return result;
     }
 }

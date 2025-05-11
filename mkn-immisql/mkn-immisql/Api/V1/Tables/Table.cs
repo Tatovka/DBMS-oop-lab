@@ -11,7 +11,7 @@ public class Table
     private ISqlValue[][] _data;
     private static Table? SuccesfullTable;
     private static Table? FailedTable;
-    private int RowCount;
+    public int RowCount { get; private set; }
     private SqlColumn IdColumn;
 
     private readonly Dictionary<String, Int32> _colMap = new();
@@ -122,6 +122,20 @@ public class Table
         }
         var resTable = new Table(returnColumns);
         resTable.RowCount = RowCount;
+        return resTable;
+    }
+
+    public Table SelectRows(List<Word> colNames, Int32[] rows)
+    {
+        var returnColumns = new SqlColumn[colNames.Count];
+        for (int i = 0; i < returnColumns.Length; i++)
+        {
+            if (_colMap.TryGetValue(colNames[i].ToString(), out int index))
+                returnColumns[i] = Columns[index].CopyRows(rows);
+            else throw new Exception($"Table does not contains column with name {colNames[i]}");
+        }
+        var resTable = new Table(returnColumns);
+        resTable.RowCount = rows.Length;
         return resTable;
     }
 }

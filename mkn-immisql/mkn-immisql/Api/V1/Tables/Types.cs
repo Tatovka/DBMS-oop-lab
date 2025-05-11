@@ -139,7 +139,7 @@ public class SqlSerial : SqlType
 {
     public readonly struct SqlSerialValue : ISqlValue
     {
-        private readonly Int64 _value;
+        public readonly Int64 _value;
         public String Value => _value.ToString();
         public SqlSerialValue(Int64 value)
         {

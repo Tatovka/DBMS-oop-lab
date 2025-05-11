@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MknImmiSql.Api.V1.Tables;
 
 namespace MknImmiSql.Api.V1.Parser;
@@ -57,9 +58,10 @@ public class InsertCommand : ICommand
             foreach (var row in rows)
             {
                 table!.TryInsertRow(columnsNames, row);
-                if (returningColumns.Count != 0)
-                    retTable = table.Select(returningColumns);
             }
+            if (returningColumns.Count != 0) 
+                retTable = table!.SelectRows(returningColumns, 
+                    Enumerable.Range(table.RowCount-rows.Count, rows.Count).ToArray());
             StatusCode = 200;
             return retTable;
         }
