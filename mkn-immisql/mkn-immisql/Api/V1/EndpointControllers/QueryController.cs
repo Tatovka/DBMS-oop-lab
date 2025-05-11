@@ -36,14 +36,13 @@ public class QueryController : Controller
         {
             Block mainBlock = Parser.Parser.Parse(request.Query);
             command = Parser.Parser.GetCommand(mainBlock);
+            var commandResult = command.Execute();
+            return StatusCode(command.StatusCode, new QueryResponse(commandResult));
         }
         catch (Exception e)
         {
             Console.WriteLine(e.Message);
             return BadRequest(e.Message);
         }
-
-        var commandResult = command.Execute();
-        return StatusCode(command.StatusCode, new QueryResponse(commandResult));
     }
 }

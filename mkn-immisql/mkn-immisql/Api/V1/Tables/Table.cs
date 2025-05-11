@@ -12,9 +12,9 @@ public class Table
     private static Table? SuccesfullTable;
     private static Table? FailedTable;
     private int RowCount;
-    public readonly SqlColumn IdColumn;
+    private SqlColumn IdColumn;
 
-    private Dictionary<String, Int32> _colMap = new();
+    private readonly Dictionary<String, Int32> _colMap = new();
 
     public void AddRow(ICollection<Word> words)
     {
@@ -24,14 +24,15 @@ public class Table
             row[i] = Columns[i].Parse(words.ElementAt(i));
         _data = _data.Append(row).ToArray();
         RowCount++;
-        IdColumn.AddRow(new Word($"{RowCount}"));
     }
     public Table(SqlColumn[] columns)
     {
-        IdColumn = SqlColumn.GetBuilder.WithName("id").HasPrimaryKey.WithType("Serial").Create();
         Columns = columns;
         for (int i = 0; i < Columns.Length; i++)
+        {
             _colMap[columns[i].Name] = i;
+        }
+            
         _data = Array.Empty<ISqlValue[]>();
     }
     
@@ -95,15 +96,15 @@ public class Table
     {
         Word[] values = new Word[Columns.Length];
         values = values.Select(x => Word.Default).ToArray();
-        foreach (var col in cols)
+        for (int i = 0; i < cols.Count; i++)
         {
-            if (col.Count != 1) throw new ArgumentException($"Wrong argument as column name {col}");
-            var colName = col[0];
+            if (cols[i].Count != 1) throw new ArgumentException($"Wrong argument as column name {cols[i]}");
+            var colName = cols[i][0];
             if (_colMap.TryGetValue(colName.ToString(), out int index))
             {   
-                if(row[index].Count != 1) 
-                    throw new ArgumentException($"Wrong argument as value {col}");
-                values[index] = row[index][0];
+                if(row[i].Count != 1) 
+                    throw new ArgumentException($"Wrong argument as value {row[i]}");
+                values[index] = row[i][0];
             }
             else throw new Exception($"Table does not contains column with name {colName}");
         }
@@ -115,14 +116,9 @@ public class Table
         var returnColumns = new SqlColumn[colNames.Count];
         for (int i = 0; i < returnColumns.Length; i++)
         {
-            if (colNames[i].Equals("id")) returnColumns[i] = IdColumn.CopyThis();
-            else
-            {
-                if (_colMap.TryGetValue(colNames[i].ToString(), out int index))
-                {
-                    returnColumns[i] = Columns[index].CopyThis();
-                } else throw new Exception($"Table does not contains column with name {colNames[i]}");
-            }
+            if (_colMap.TryGetValue(colNames[i].ToString(), out int index))
+                returnColumns[i] = Columns[index].CopyThis();
+            else throw new Exception($"Table does not contains column with name {colNames[i]}");
         }
         var resTable = new Table(returnColumns);
         resTable.RowCount = RowCount;

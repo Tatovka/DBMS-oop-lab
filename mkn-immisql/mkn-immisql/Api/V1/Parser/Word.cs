@@ -23,11 +23,17 @@ public class Word : IParserNode
         return _value;
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is Word otherWord) return _value.Equals(otherWord._value, StringComparison.InvariantCultureIgnoreCase);
-        if (obj is String str) return str.Equals(_value, StringComparison.InvariantCultureIgnoreCase);
+        if (obj is String str) return Equals(str);
         return false;
+    }
+
+    public bool Equals(String? other)
+    {
+        if (other is null) return Equals(Empty);
+        return other.Equals(_value, StringComparison.InvariantCultureIgnoreCase);;
     }
     public bool IsName => (_value[0] == '"' && _value.Last() == '"') || NameFormat.IsMatch(_value);
     public override int GetHashCode()

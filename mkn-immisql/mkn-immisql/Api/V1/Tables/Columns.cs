@@ -63,43 +63,45 @@ public class SqlColumn
                 colType = new SqlString(_isNullable);
             else if (_type.Equals("SERIAL"))
             {
-                if(!_isPKey) throw new Exception("Primary key is required with Serial type");
+                if (!_isPKey) throw new Exception("Primary key is required with Serial type");
+                if (_defaultValue is not null) throw new Exception("Cannot use default value with Serial");
                 colType = new SqlSerial(_isNullable);
             }
             else throw new Exception($"Invalid type name: {_type}");
             DefaultSqlValue colDefaultValue = _defaultValue is not null? 
                 DefaultSqlValue.WithValue(colType, _defaultValue) : DefaultSqlValue.NotSpecified;
-            return new SqlColumn(colType, _name, _isPKey, colDefaultValue);
+            return _type.Equals("Serial")? new SerialColumn(_name) : 
+                new SqlColumn(colType, _name, _isPKey, colDefaultValue);
         }
     }
     public readonly String Name;
     public readonly Boolean IsPKey;
-    private readonly List<ISqlValue> _rows = new ();
-    private readonly SqlType _type;
+    protected readonly List<ISqlValue> _rows = new ();
+    public readonly SqlType Type;
     private readonly DefaultSqlValue _defaultValue;
-    private SqlColumn(SqlType type, String name, Boolean isPKey, DefaultSqlValue defaultValue)
+    protected SqlColumn(SqlType type, String name, Boolean isPKey, DefaultSqlValue defaultValue)
     {
-        _type = type;
+        Type = type;
         Name = name;
         IsPKey = isPKey;
         _defaultValue = defaultValue;
     }
     public void AddRow(Word value)
     {
-        _rows.Add(_type.Parse(value));
+        _rows.Add(Type.Parse(value));
     }
 
     public string AtRow(int index) => _rows[index].Value;
 
-    public ISqlValue Parse(Word word)
+    public virtual ISqlValue Parse(Word word)
     {
         if (word.Equals("Default"))
         {
             if (_defaultValue.IsSpecified)
                 _rows.Add(_defaultValue.Value);
-            throw new Exception("Cannot assign default value, it is not specified");
+            else throw new Exception("Cannot assign default value, it is not specified");
         }
-        _rows.Add(_type.Parse(word));
+        else _rows.Add(Type.Parse(word));
         return _rows.Last();
     }
 
@@ -109,19 +111,34 @@ public class SqlColumn
         result.Name = Name;
         result.IsPKey = IsPKey;
         result.DefaultValue = _defaultValue.GetSchema();
-        result.Type = _type.TypeName;
-        result.IsNullable = _type.IsNullable;
+        result.Type = Type.TypeName;
+        result.IsNullable = Type.IsNullable;
         return result;
     }
     public static ColumnBuilder GetBuilder => new ColumnBuilder();
 
     public SqlColumn CopyThis()
     {
-        var result =  new SqlColumn(_type, Name, IsPKey, _defaultValue);
+        var result =  new SqlColumn(Type, Name, IsPKey, _defaultValue);
         foreach (var val in _rows)
         {
             result._rows.Add(val);
         }
         return result;
+    }
+}
+
+public class SerialColumn : SqlColumn
+{
+    public SerialColumn(String name) : 
+        base(new SqlSerial(false), name, true, DefaultSqlValue.NotSpecified) { }
+
+    private Int64 _curValue;
+
+    public override ISqlValue Parse(Word word)
+    {
+        if (!word.Equals(Word.Default)) throw new ArgumentException("Serial value sets automatically");
+        _rows.Add(Type.Parse(new Word($"{++_curValue}")));
+        return _rows.Last();
     }
 }
