@@ -35,6 +35,8 @@ public class Word : IParserNode
         if (other is null) return Equals(Empty);
         return other.Equals(_value, StringComparison.InvariantCultureIgnoreCase);;
     }
+
+    public Word AsWord  => this;
     public bool IsName => (_value[0] == '"' && _value.Last() == '"') || NameFormat.IsMatch(_value);
     public override int GetHashCode()
     {

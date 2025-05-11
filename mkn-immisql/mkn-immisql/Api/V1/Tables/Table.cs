@@ -92,51 +92,64 @@ public class Table
         }
     }
 
-    public void TryInsertRow(List<List<Word>> cols, List<List<Word>> row)
+    public void InsertRow(List<Word> cols, List<Word> row)
     {
         Word[] values = new Word[Columns.Length];
         values = values.Select(x => Word.Default).ToArray();
         for (int i = 0; i < cols.Count; i++)
         {
-            if (cols[i].Count != 1) throw new ArgumentException($"Wrong argument as column name {cols[i]}");
-            var colName = cols[i][0];
+            var colName = cols[i];
             if (_colMap.TryGetValue(colName.ToString(), out int index))
-            {   
-                if(row[i].Count != 1) 
-                    throw new ArgumentException($"Wrong argument as value {row[i]}");
-                values[index] = row[i][0];
-            }
+                values[index] = row[i];
             else throw new Exception($"Table does not contains column with name {colName}");
         }
         AddRow(values);
     }
+    
 
-    public Table Select(List<Word> colNames)
+    public Table SelectColumns(List<Word> colNames, Int32[] rows)
     {
         var returnColumns = new SqlColumn[colNames.Count];
         for (int i = 0; i < returnColumns.Length; i++)
         {
-            if (_colMap.TryGetValue(colNames[i].ToString(), out int index))
-                returnColumns[i] = Columns[index].CopyThis();
-            else throw new Exception($"Table does not contains column with name {colNames[i]}");
-        }
-        var resTable = new Table(returnColumns);
-        resTable.RowCount = RowCount;
-        return resTable;
-    }
-
-    public Table SelectRows(List<Word> colNames, Int32[] rows)
-    {
-        var returnColumns = new SqlColumn[colNames.Count];
-        for (int i = 0; i < returnColumns.Length; i++)
-        {
-            if (_colMap.TryGetValue(colNames[i].ToString(), out int index))
-                returnColumns[i] = Columns[index].CopyRows(rows);
-            else throw new Exception($"Table does not contains column with name {colNames[i]}");
+            returnColumns[i] = FindColumn(colNames[i]).CopyRows(rows);
         }
         var resTable = new Table(returnColumns);
         resTable.RowCount = rows.Length;
         return resTable;
+    }
+
+    public Table SelectAllColumns(Int32[] rows)
+    {
+        var returnColumns = new SqlColumn[Columns.Length];
+        for (int i = 0; i < Columns.Length; i++)
+        {
+            returnColumns[i] = Columns[i].CopyRows(rows);
+        }
+        var resTable = new Table(returnColumns);
+        resTable.RowCount = rows.Length;
+        return resTable;
+    }
+    
+    public Int32[] RowsWhere(WhereCondition? condition)
+    {
+        if (condition is null) return Enumerable.Range(0, Columns.Length).ToArray();
+        SqlColumn column = FindColumn(condition.ColName);
+        return column.RowsWhere(condition);
+    }
+    
+    public Int32[] OrderRowsBy(OrderCondition? condition, Int32[] indexes)
+    {
+        if (condition is null) return indexes;
+        SqlColumn column = FindColumn(condition.ColName);
+        return column.OrderRowsByThis(condition.Direction, indexes);
+    }
+
+    private SqlColumn FindColumn(Word name)
+    {
+        if (_colMap.TryGetValue(name.ToString(), out int index))
+            return Columns[index];
+        throw new Exception($"Table does not contains column with name {name}");
     }
 }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using MknImmiSql.Api.V1.Parser;
 
@@ -21,11 +22,34 @@ public abstract class SqlType
 public interface ISqlValue
 {
     public string Value { get; }
+
+    public bool CompareWith(Word op, ISqlValue other) => false;
+    
 }
 
+public class SqlValueComparer : IComparer<ISqlValue>
+{
+    public int Compare(ISqlValue x, ISqlValue y)
+    {
+        if (x.CompareWith(new Word("<"), y)) return -1;
+        if (x.CompareWith(new Word(">"), y)) return 1;
+        return 0;
+    }
+
+    public static SqlValueComparer Comparer { get; } = new();
+}
 public readonly struct SqlNull : ISqlValue
 {
     public string Value => "NULL";
+
+    public bool CompareWith(Word op, ISqlValue other)
+    {
+        if (op.Equals("=")) return other is SqlNull;
+        if (op.Equals("!=")) return other is not SqlNull;
+        if (op.Equals("=") || op.Equals("!=")) return false;
+        throw new ArgumentException("Cannot compare Null with ordinal operators");
+    }
+    
 }
 
 public class SqlBoolean : SqlType
@@ -37,6 +61,13 @@ public class SqlBoolean : SqlType
         public SqlBoolValue(Boolean value)
         {
             _value = value;
+        }
+        public bool CompareWith(Word op, ISqlValue other)
+        {
+            if (op.Equals("=") && other.Value == Value) return true;
+            if (op.Equals("!=") && other.Value != Value) return true;
+            if (op.Equals("=") || op.Equals("!=")) return false;
+            throw new ArgumentException("Cannot compare Boolean with ordinal operators");
         }
     }
     public override String TypeName => "boolean";
@@ -64,6 +95,24 @@ public class SqlInteger : SqlType
         {
             _value = value;
         }
+        public bool CompareWith(Word op, ISqlValue other)
+        {
+            if (other is SqlIntegerValue otherSqlVal)
+            {
+                Int64 otherVal = otherSqlVal._value;
+                if (op.Equals("=")) return otherVal.Equals(_value);
+                if (op.Equals("!=")) return !otherVal.Equals(_value);
+                if (op.Equals(">")) return _value > otherVal;
+                if (op.Equals("<")) return _value < otherVal;
+                if (op.Equals(">=")) return _value >= otherVal;
+                if (op.Equals("<=")) return _value <= otherVal;
+                throw new ArgumentException("Unknown operator");
+            }
+            if (op.Equals("=")) return false;
+            if (op.Equals("!=")) return true;
+            throw new ArgumentException($"Cannot compare integer with {other.Value}");
+        }
+        
     }
     public override String TypeName => "integer";
     public override ISqlValue Parse(Word word)
@@ -89,6 +138,23 @@ public class SqlFloat : SqlType
         public SqlFloatValue(Double value)
         {
             _value = value;
+        }
+        public bool CompareWith(Word op, ISqlValue other)
+        {
+            if (other is SqlFloatValue otherSqlVal)
+            {
+                Double otherVal = otherSqlVal._value;
+                if (op.Equals("=")) return otherVal.Equals(_value);
+                if (op.Equals("!=")) return !otherVal.Equals(_value);
+                if (op.Equals(">")) return _value > otherVal;
+                if (op.Equals("<")) return  _value >  otherVal;
+                if (op.Equals(">=")) return _value <= otherVal;
+                if (op.Equals("<=")) return _value >= otherVal;
+                throw new ArgumentException("Unknown operator");
+            }
+            if (op.Equals("=")) return false;
+            if (op.Equals("!=")) return true;
+            throw new ArgumentException($"Cannot compare float with {other.Value}");
         }
     }
     public override String TypeName => "float";
@@ -116,6 +182,25 @@ public class SqlString : SqlType
         {
             _value = value;
         }
+
+        public bool CompareWith(Word op, ISqlValue other)
+        {
+            if (other is SqlStringValue)
+            {
+                string otherVal = other.Value;
+                int compareResult = String.Compare(Value, otherVal, false, CultureInfo.InvariantCulture);
+                if (op.Equals("=")) return compareResult == 0;
+                if (op.Equals("!=")) return compareResult != 0;
+                if (op.Equals(">")) return compareResult > 0;
+                if (op.Equals("<")) return compareResult < 0;
+                if (op.Equals(">=")) return compareResult >= 0;
+                if (op.Equals("<=")) return compareResult <= 0;
+                throw new ArgumentException("Unknown operator");
+            }
+            if (op.Equals("=")) return false;
+            if (op.Equals("!=")) return true;
+            throw new ArgumentException($"Cannot compare string with {other.Value}");
+        }
     }
     public override String TypeName => "string";
     public override ISqlValue Parse(Word word)
@@ -135,31 +220,12 @@ public class SqlString : SqlType
     public SqlString(bool isNullable) : base(isNullable){ }
 }
 
-public class SqlSerial : SqlType
+public class SqlSerial : SqlInteger
 {
-    public readonly struct SqlSerialValue : ISqlValue
-    {
-        public readonly Int64 _value;
-        public String Value => _value.ToString();
-        public SqlSerialValue(Int64 value)
-        {
-            _value = value;
-        }
-    }
     public override String TypeName => "serial";
-    public override ISqlValue Parse(Word word)
-    {
-        if (word.Equals("NULL"))
-        {
-            if (IsNullable) return new SqlNull();
-            throw new Exception($"Cannot assign null to non-nullable {TypeName}");
-        }
-        if (Int64.TryParse(word.ToString(), out Int64 result))
-            return new SqlSerialValue(result);
-        throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
-    }
-    public SqlSerial(bool isNullable) : base(isNullable){ }
+    public SqlSerial(bool isNullable) : base(isNullable) { }
 }
+
 public class DefaultSqlValue
 {
     public readonly bool IsSpecified;

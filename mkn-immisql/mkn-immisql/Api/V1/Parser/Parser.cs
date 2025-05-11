@@ -86,6 +86,9 @@ public static class Parser
         if (nodes[0].Equals("INSERT INTO"))
             return new InsertCommand(nodes.Skip(1).ToList());
         
+        if (nodes[0].Equals("Select"))
+            return new SelectCommand(nodes.Skip(1).ToList());
+        
         throw new Exception($"Unknown command {nodes[0]} {nodes[1]}");
     }
 
@@ -123,6 +126,17 @@ public static class Parser
                 cur = new();
             }
             else cur.Add(word);
+        }
+        return result;
+    }
+
+    public static List<Word> FlatArgList(List<List<Word>> list)
+    {
+        var result = new List<Word>();
+        foreach (var subl in list)
+        {
+            if (subl.Count != 1) throw new ArgumentException($"Required single word argument, but was {subl}");
+            result.Add(subl[0]);
         }
         return result;
     }

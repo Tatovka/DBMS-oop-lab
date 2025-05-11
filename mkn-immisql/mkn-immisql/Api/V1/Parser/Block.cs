@@ -56,6 +56,14 @@ public class Block : IParserNode
         Children = GroupKeyWords(Children);
     }
 
+    public Block(List<Word> words)
+    {
+        foreach (var word in words)
+        {
+            Children.Add(word);
+        }
+        HasBlocks = false;
+    }
     List<IParserNode> GroupKeyWords(List<IParserNode> oldWords)
     {
         List<IParserNode> result = new();

@@ -5,6 +5,10 @@ namespace MknImmiSql.Api.V1.Tables;
 using System;
 using System.Collections.Generic;
 
+public class PrimaryKeyException : Exception
+{
+    
+}
 public class SqlColumn
 {
     public class ColumnBuilder
@@ -95,16 +99,19 @@ public class SqlColumn
 
     public virtual ISqlValue Parse(Word word)
     {
+        ISqlValue parsedValue;
         if (word.Equals("Default"))
         {
             if (_defaultValue.IsSpecified)
-                _rows.Add(_defaultValue.Value);
+                parsedValue = _defaultValue.Value;
             else if (Type is SqlSerial)
-                _rows.Add(Type.Parse(word));
+                parsedValue = Type.Parse(word);
             else throw new Exception("Cannot assign default value, it is not specified");
         }
-        else _rows.Add(Type.Parse(word));
-        return _rows.Last();
+        else parsedValue = Type.Parse(word);
+        if (IsPKey && _rows.Contains(parsedValue)) throw new PrimaryKeyException();
+        _rows.Add(parsedValue);
+        return parsedValue;
     }
 
     public TableSchemaColumnInfo GetSchema()
@@ -138,6 +145,27 @@ public class SqlColumn
         }
         return result;
     }
+
+    public Int32[] RowsWhere(WhereCondition condition)
+    {
+        List<Int32> result = new ();
+        for (int i = 0; i < _rows.Count; i++)
+        {
+            if (_rows[i].CompareWith(condition.Op, Type.Parse(condition.Value)))
+                result.Add(i);
+        }
+        return result.ToArray();
+    }
+
+    public Int32[] OrderRowsByThis(Word direction, Int32[] indexes)
+    {
+        if (direction.Equals("DESC"))
+            return indexes.OrderByDescending(ind => _rows[ind], SqlValueComparer.Comparer).ToArray();
+        if (direction.Equals("ASC"))
+            return indexes.OrderBy(ind => _rows[ind], SqlValueComparer.Comparer).ToArray();
+        throw new Exception($"Invalid direction {direction}");
+    }
+    
 }
 
 public class SerialColumn : SqlColumn
@@ -177,4 +205,5 @@ public class SerialColumn : SqlColumn
         result._curValue = maxValue;
         return result;
     }
+    
 }

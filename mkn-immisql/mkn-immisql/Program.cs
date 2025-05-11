@@ -17,10 +17,9 @@ public static class Program
         Keyword.AddKeyword(new Word("CREATE TABLE"));
         Keyword.AddKeyword(new Word("PRIMARY KEY"));
         Keyword.AddKeyword(new Word("DROP TABLE"));
-        Keyword.AddKeyword(new Word("DEFAULT"));
         Keyword.AddKeyword(new Word("NOT NULL"));
         Keyword.AddKeyword(new Word("INSERT INTO"));
-        // "query": "INSERT INTO t1 (c1, c2, c3, c4) Values (true, 1, 1.2, 'aboba')"
+        Keyword.AddKeyword(new Word("Order By"));
         
         try
         {
