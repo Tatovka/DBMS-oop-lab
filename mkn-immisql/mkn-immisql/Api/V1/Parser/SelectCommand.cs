@@ -11,13 +11,13 @@ public class WhereCondition
     public readonly Word Op;
     public readonly Word Value;
 
-    public WhereCondition(IEnumerator<IParserNode> it)
+    public WhereCondition(ParserIterator it)
     {
         try
         {
-            ColName = ICommand.Next(it).AsWord;
-            Op = ICommand.Next(it).AsWord;
-            Value = ICommand.Next(it).AsWord;
+            ColName = it.NextWord;
+            Op = it.NextWord;
+            Value = it.NextWord;
         } catch (Exception e)
         {
             throw new ArgumentException($"Cannot parse where condition: {e}");
@@ -29,12 +29,12 @@ public class OrderCondition
     public readonly Word ColName;
     public readonly Word Direction;
 
-    public OrderCondition(IEnumerator<IParserNode> it)
+    public OrderCondition(ParserIterator it)
     {
         try
         {
-            ColName = ICommand.Next(it).AsWord;
-            Direction = ICommand.Next(it).AsWord;
+            ColName = it.NextWord;
+            Direction = it.NextWord;
         } catch (Exception e)
         {
             throw new ArgumentException($"Cannot parse order condition: {e}");
@@ -42,7 +42,7 @@ public class OrderCondition
     }
 }
 
-public class SelectCommand : ICommand
+public class SelectCommand : ParserIterator, ICommand
 {
     private readonly String _tableName;
     public Int32 StatusCode { get; private set; }
@@ -53,59 +53,35 @@ public class SelectCommand : ICommand
     private readonly OrderCondition? _orderCondition;
     private readonly WhereCondition? _whereConditions;
     private readonly Int64? _limit;
-    public SelectCommand(List<IParserNode> args)
+    public SelectCommand(List<IParserNode> args) : base(args)
     {
-        IEnumerator<IParserNode> it = args.GetEnumerator();
-        if (ICommand.Next(it).Equals("*"))
+        if (NextWord.Equals("*")) _selectAll = true;
+        else _columnsNames = ArgumentsList.UntilKeyword(this).Flatten;
+        if (StreamEnds || !NextWord.Equals("From")) 
+            throw new FormatException("From keyword not found in a select command");
+        _tableName = NextWord.GetName();
+        //Parse flags
+        while (MoveNext())
         {
-            _selectAll = true;
-            if (!ICommand.Next(it).Equals("From")) 
-                throw new ArgumentException($"Expected From, but found: {it.Current}");
-        } else
-        {
-            List<Word> blockWords = new();
-            while (!it.Current.Equals("From"))
+            if (CurrentWord.Equals("Where"))
             {
-                if (it.Current is Word colName)
-                    blockWords.Add(colName);
-                else throw new ArgumentException($"Expected column name, but was {it.Current}");
-                if (!it.MoveNext()) throw new Exception("From is not found after Select");
+                if (_whereConditions is null)
+                    _whereConditions = new WhereCondition(this);
+                else throw new ArgumentException("Where condition was given twice");
             }
-            var retBlock = new Block(blockWords);
-            _columnsNames = Parser.FlatArgList(Parser.SplitArgList(Parser.GetArgList(retBlock, out int _)));
-        }
-        
-        if (ICommand.Next(it) is Word nameWord)
-            _tableName = nameWord.GetName();
-        else throw new ArgumentException("Expected word as table name");
-
-        while (it.MoveNext())
-        {
-            if (it.Current is Word kWord)
+            else if (CurrentWord.Equals("Order By"))
             {
-                if (kWord.Equals("Where"))
-                {
-                    if (_whereConditions is null)
-                        _whereConditions = new WhereCondition(it);
-                    else throw new ArgumentException("Where condition was given twice");
-                }
-                
-                else if (kWord.Equals("Order By"))
-                {
-                    if (_orderCondition is null)
-                        _orderCondition = new OrderCondition(it);
-                    else throw new ArgumentException("Order condition was given twice");
-                }
-                
-                else if (kWord.Equals("Limit"))
-                {
-                    if (_limit is null) 
-                        _limit = Int64.Parse(ICommand.Next(it).AsWord.ToString());
-                    else throw new ArgumentException("Limit condition was given twice");
-                }
-                else throw new ArgumentException("Unknown Select argument");
+                if (_orderCondition is null)
+                    _orderCondition = new OrderCondition(this);
+                else throw new ArgumentException("Order condition was given twice");
             }
-            else throw new ArgumentException($"Expected keyword, but was {it.Current}");
+            else if (CurrentWord.Equals("Limit"))
+            {
+                if (_limit is null) 
+                    _limit = Int64.Parse(NextWord.ToString());
+                else throw new ArgumentException("Limit condition was given twice");
+            }
+            else throw new ArgumentException($"Unknown Select command flag {CurrentWord}");
         }
     }
     

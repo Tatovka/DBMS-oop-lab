@@ -5,7 +5,7 @@ using MknImmiSql.Api.V1.Tables;
 
 namespace MknImmiSql.Api.V1.Parser;
 
-public class DeleteCommand : ICommand
+public class DeleteCommand : ParserIterator, ICommand
 {
     private readonly String _tableName;
     public Int32 StatusCode { get; private set; }
@@ -13,40 +13,24 @@ public class DeleteCommand : ICommand
     private readonly WhereCondition? _whereConditions;
     private readonly List<Word>? _returningColumns;
     
-    public DeleteCommand(List<IParserNode> args)
+    public DeleteCommand(List<IParserNode> args) : base(args)
     {
-        IEnumerator<IParserNode> it = args.GetEnumerator();
-        if (ICommand.Next(it) is Word nameWord)
-            _tableName = nameWord.GetName();
-        else throw new ArgumentException("Expected word as table name");
-
-        while (it.MoveNext())
+        _tableName = NextWord.GetName();
+        while (MoveNext())
         {
-            if (it.Current is Word kWord)
+            if (CurrentWord.Equals("Where"))
             {
-                if (kWord.Equals("Where"))
-                {
-                    if (_whereConditions is null)
-                        _whereConditions = new WhereCondition(it);
-                    else throw new ArgumentException("Where condition was given twice");
-                }
-                else if (kWord.Equals("Returning"))
-                {
-                    if (_returningColumns is not null) 
-                        throw new ArgumentException("Returning was given twice");
-                    List<Word> blockWords = new();
-                    while (it.MoveNext() && !it.Current.Equals("Where"))
-                    {
-                        if (it.Current is Word colName)
-                            blockWords.Add(colName);
-                        else throw new ArgumentException($"Expected column name, but was { it.Current }");
-                    }
-                    var retBlock = new Block(blockWords);
-                    _returningColumns = Parser.FlatArgList(Parser.SplitArgList(Parser.GetArgList(retBlock, out int _)));
-                }
-                else throw new ArgumentException($"Unknown Delete argument {it.Current}");
+                if (_whereConditions is not null) 
+                    throw new ArgumentException("Where condition was given twice");
+                _whereConditions = new WhereCondition(this);
             }
-            else throw new ArgumentException($"Expected keyword, but was {it.Current}");
+            else if (CurrentWord.Equals("Returning"))
+            {
+                if (_returningColumns is not null)
+                    throw new ArgumentException("Returning was given twice");
+                _returningColumns = ArgumentsList.UntilKeyword(this).Flatten;
+            }
+            else throw new ArgumentException($"Unknown Delete command flag {Current}");
         }
     }
     public Table Execute()

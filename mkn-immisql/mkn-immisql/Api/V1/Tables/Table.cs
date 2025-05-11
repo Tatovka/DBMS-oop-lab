@@ -30,7 +30,8 @@ public class Table
         Columns = columns;
         for (int i = 0; i < Columns.Length; i++)
         {
-            _colMap[columns[i].Name] = i;
+            if (!_colMap.TryAdd(columns[i].Name, i)) 
+                throw new ArgumentException($"Column with name {columns[i].Name} already exists");
         }
         _data = Array.Empty<ISqlValue[]>();
     }

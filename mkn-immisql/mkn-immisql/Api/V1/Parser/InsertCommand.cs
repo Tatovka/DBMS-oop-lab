@@ -5,10 +5,10 @@ using MknImmiSql.Api.V1.Tables;
 
 namespace MknImmiSql.Api.V1.Parser;
 
-public class InsertCommand : ICommand
+public class InsertCommand : ParserIterator, ICommand
 {
     public static String CommandName => "INSERT INTO";
-    private String _tableName;
+    private readonly String _tableName;
     public Int32 StatusCode { get; private set; }
     
     private List<List<Word>> rows = new ();
@@ -16,39 +16,26 @@ public class InsertCommand : ICommand
     private List<Word> columnsNames;
     
     private List<Word> returningColumns = new ();
-    public InsertCommand(List<IParserNode> args)
+    public InsertCommand(List<IParserNode> args) : base(args)
     {
         //Parsing name
-        var it = args.GetEnumerator();
-        it.MoveNext();
-        if (it.Current is Word nameWord && nameWord.IsName)
-            _tableName = nameWord.GetName();
-        else throw new Exception("Table name should be a Word");
+        _tableName = NextWord.GetName();
         //Parsing argument block
-        if (!it.MoveNext()) throw new Exception("Column names should be given");
-        columnsNames = Parser.FlatArgList(Parser.SplitArgList(Parser.GetArgList(it.Current, out int colCount)));
-        if (!it.MoveNext() || !it.Current.Equals("VALUES")) throw new Exception("Expected values to insert");
-        while (it.MoveNext() && it.Current is Block row)
+        if (!MoveNext()) throw new Exception("Column names should be given");
+        if (Current is not Block) throw new Exception("Column names should be given in brackets");
+        columnsNames = ArgumentsList.FromBlock((Block)Current).Flatten;
+        if (!NextWord.Equals("Values")) 
+            throw new Exception("Values keyword is not found in Insert command body");
+        while (MoveNext() && Current is Block row)
         {
-            var rowArgs = Parser.GetArgList(row, out int argsCount);
-            if (argsCount != colCount) throw new Exception("Wrong values count");
-            rows.Add(Parser.FlatArgList(Parser.SplitArgList(rowArgs)));
-            if (!it.MoveNext()) return; if (!it.Current.Equals(",")) break;
+            rows.Add(ArgumentsList.FromBlock(row).Flatten);
+            if (!MoveNext()) return; if (!Current.Equals(",")) break;
         }
+        if (StreamEnds) return;
         
-        if (it.Current.Equals("RETURNING"))
-        {
-            List<Word> blockWords = new();
-            while (it.MoveNext())
-            {
-                if (it.Current is Word colName)
-                    blockWords.Add(colName);
-                else throw new ArgumentException($"Expected column name, but was { it.Current }");
-            }
-            var retBlock = new Block(blockWords);
-            returningColumns = Parser.FlatArgList(Parser.SplitArgList(Parser.GetArgList(retBlock, out int _)));
-        }
-        else throw new Exception($"Unexpected argument in {CommandName} after Values: {it.Current}");
+        if (CurrentWord.Equals("Returning"))
+            returningColumns = ArgumentsList.UntilEnd(this).Flatten;
+        else throw new Exception($"Unexpected argument in {CommandName} after Values: {Current}");
     }
 
     public Table Execute()
@@ -77,5 +64,4 @@ public class InsertCommand : ICommand
         StatusCode = 404;
         return Table.Failed;
     }
-
 }

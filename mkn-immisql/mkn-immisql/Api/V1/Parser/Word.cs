@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -38,6 +39,7 @@ public class Word : IParserNode
 
     public String GetName()
     {
+        if (!IsName) throw new($"Invalid format: {_value} cannot be a name");
         if (_value[0] == '\"' && _value.Last() == '\"') return _value.Substring(1, _value.Length - 2);
         return _value;
     }

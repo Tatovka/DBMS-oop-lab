@@ -26,71 +26,41 @@ public class SetExpression
     
 }
 
-public class UpdateCommand : ICommand
+public class UpdateCommand : ParserIterator, ICommand
 {
-        private readonly String _tableName;
+    private readonly String _tableName;
     public Int32 StatusCode { get; private set; }
     
     private readonly WhereCondition? _whereConditions;
     private readonly List<Word>? _returningColumns;
     private readonly List<SetExpression> _setExpressions = new();
     
-    public UpdateCommand(List<IParserNode> args)
+    public UpdateCommand(List<IParserNode> args) : base(args)
     {
-        IEnumerator<IParserNode> it = args.GetEnumerator();
-        if (ICommand.Next(it) is Word nameWord)
-            _tableName = nameWord.GetName();
-        else throw new ArgumentException("Expected word as table name");
-        
-        if (!ICommand.Next(it).Equals("Set")) throw new ArgumentException("Set not found in Update request");
-
-        bool shouldContinue = false;
-        List<Word> setBlockWords = new();
-        while (it.MoveNext())
-        {
-            if (it.Current.AsWord.IsKeyword)
-            {
-                shouldContinue = true;
-                break;
-            }
-            if (it.Current is Word colName)
-                setBlockWords.Add(colName);
-            else throw new ArgumentException($"Expected column name, but was { it.Current }");
-        }
-        var block = new Block(setBlockWords);
-        var setArgs = Parser.SplitArgList(Parser.GetArgList(block, out int _));
-        foreach (var setExpr in setArgs)
+        _tableName = NextWord.GetName();
+        if (!Next.Equals("Set")) 
+            throw new ArgumentException("Set not found in Update request");
+        var setArgs = ArgumentsList.UntilKeyword(this);
+        foreach (var setExpr in setArgs.Data)
             _setExpressions.Add(new SetExpression(setExpr));
-        
-        if (shouldContinue) do
+        //Parse flags
+        while (!StreamEnds)
         {
-            if (it.Current is Word kWord)
+            if (CurrentWord.Equals("Where"))
             {
-                if (kWord.Equals("Where"))
-                {
-                    if (_whereConditions is null)
-                        _whereConditions = new WhereCondition(it);
-                    else throw new ArgumentException("Where condition was given twice");
-                }
-                else if (kWord.Equals("Returning"))
-                {
-                    if (_returningColumns is not null) 
-                        throw new ArgumentException("Returning was given twice");
-                    List<Word> blockWords = new();
-                    while (it.MoveNext() && !it.Current.AsWord.IsKeyword)
-                    {
-                        if (it.Current is Word colName)
-                            blockWords.Add(colName);
-                        else throw new ArgumentException($"Expected column name, but was { it.Current }");
-                    }
-                    var retBlock = new Block(blockWords);
-                    _returningColumns = Parser.FlatArgList(Parser.SplitArgList(Parser.GetArgList(retBlock, out int _)));
-                }
-                else throw new ArgumentException($"Unknown Update argument {it.Current}");
+                if (_whereConditions is null)
+                    _whereConditions = new WhereCondition(this);
+                else throw new ArgumentException("Where condition was given twice");
             }
-            else throw new ArgumentException($"Expected keyword, but was {it.Current}");
-        } while (it.MoveNext());
-        
+            else if (CurrentWord.Equals("Returning"))
+            {
+                if (_returningColumns is not null) 
+                    throw new ArgumentException("Returning was given twice");
+                _returningColumns = ArgumentsList.UntilKeyword(this).Flatten;
+            }
+            else throw new ArgumentException($"Unknown Update argument: {Current}");
+            MoveNext();
+        };
     }
     public Table Execute()
     {
