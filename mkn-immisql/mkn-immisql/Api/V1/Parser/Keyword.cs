@@ -33,8 +33,27 @@ public class Keyword
         else
             Beginings[splited[0]] = cur;
     }
-    
 
+    public static void InitKeywords()
+    {
+        foreach (var kw in KeywordList)
+            AddKeyword(kw);
+    }
+    public static readonly Word[] KeywordList =
+    {
+        new ("IF NOT EXISTS"),
+        new ("IF EXISTS"),
+        new ("CREATE TABLE"),
+        new ("PRIMARY KEY"),
+        new ("DROP TABLE"),
+        new ("NOT NULL"),
+        new ("INSERT INTO"),
+        new ("Order By"),
+        new ("Delete From"),
+        new ("Update"),
+        new ("Where"),
+        new ("Returning"),
+    };
 
     public static Dictionary<Word, Keyword> Beginings = new();
     

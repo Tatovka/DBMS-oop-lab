@@ -44,7 +44,6 @@ public class OrderCondition
 
 public class SelectCommand : ICommand
 {
-    public static String CommandName => "Select";
     private readonly String _tableName;
     public Int32 StatusCode { get; private set; }
     

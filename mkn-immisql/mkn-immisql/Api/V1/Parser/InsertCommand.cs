@@ -55,7 +55,7 @@ public class InsertCommand : ICommand
     {
         if (Database.TryGetTable(_tableName, out var table))
         {
-            Table retTable = Table.Success;
+            Table retTable = Table.Empty;
             foreach (var row in rows)
             {
                 try

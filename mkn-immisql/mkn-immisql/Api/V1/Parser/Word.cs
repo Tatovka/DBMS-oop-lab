@@ -38,6 +38,8 @@ public class Word : IParserNode
 
     public Word AsWord  => this;
     public bool IsName => (_value[0] == '"' && _value.Last() == '"') || NameFormat.IsMatch(_value);
+    public bool IsKeyword => Keyword.KeywordList.Contains(this);
+
     public override int GetHashCode()
     {
         return _value.ToLowerInvariant().GetHashCode();

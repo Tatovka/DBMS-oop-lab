@@ -7,7 +7,7 @@ namespace MknImmiSql.Api.V1.Tables;
 
 public class Table
 {
-    public readonly SqlColumn[] Columns;
+    public SqlColumn[] Columns;
     private ISqlValue[][] _data;
     private static Table? SuccesfullTable;
     private static Table? FailedTable;
@@ -32,10 +32,9 @@ public class Table
         {
             _colMap[columns[i].Name] = i;
         }
-            
         _data = Array.Empty<ISqlValue[]>();
     }
-    
+    public static readonly Table Empty = new Table(Array.Empty<SqlColumn>());
     public static Table Success
     {
         get
@@ -129,6 +128,35 @@ public class Table
         var resTable = new Table(returnColumns);
         resTable.RowCount = rows.Length;
         return resTable;
+    }
+
+    public void RemoveRows(Int32[] indexes)
+    {
+        if (indexes.Any(el => el >= RowCount)) throw new ArgumentException("Row index is out of range");
+        foreach (var col in Columns)
+            col.RemoveRows(indexes);
+        RowCount -= indexes.Length;
+    }
+
+    public Int32[] AllRows =>  Enumerable.Range(0, RowCount).ToArray();
+    
+    public void UpdateRows(List<SetExpression> setExpressions, Int32[] indexes)
+    {
+        if (indexes.Any(el => el >= RowCount)) throw new ArgumentException("Row index is out of range");
+        var oldTable = SelectAllColumns(AllRows);
+        try
+        {
+            foreach (var expr in setExpressions)
+            {
+                var column = FindColumn(expr.ColumnName);
+                column.UpdateRows(expr.Value, indexes);
+            }
+        }
+        catch (Exception)
+        {
+            Columns = oldTable.Columns;
+            throw;
+        }
     }
     
     public Int32[] RowsWhere(WhereCondition? condition)

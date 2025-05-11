@@ -177,7 +177,7 @@ public class SqlString : SqlType
     public readonly struct SqlStringValue : ISqlValue
     {
         private readonly String _value;
-        public String Value => $"'{_value}'";
+        public String Value => _value;
         public SqlStringValue(String value)
         {
             _value = value;

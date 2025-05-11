@@ -135,6 +135,13 @@ public class SqlColumn
         }
         return result;
     }
+
+    public void RemoveRows(Int32[] indexes)
+    {
+        indexes = indexes.OrderBy(x => x).ToArray();
+        for (int i = 0; i < indexes.Length; i++)
+            _rows.RemoveAt(indexes[i] - i);
+    }
     
     public virtual SqlColumn CopyRows(Int32[] indexes)
     {
@@ -165,7 +172,20 @@ public class SqlColumn
             return indexes.OrderBy(ind => _rows[ind], SqlValueComparer.Comparer).ToArray();
         throw new Exception($"Invalid direction {direction}");
     }
-    
+
+    public void UpdateRows(Word value, Int32[] indexes)
+    {
+        ISqlValue val = Type.Parse(value);
+        foreach (var index in indexes)
+        {
+            if (IsPKey)
+            {
+                int ind = _rows.IndexOf(val);
+                if (ind != -1 && ind != index) throw new PrimaryKeyException();
+            }
+            _rows[index] = val;
+        }
+    }
 }
 
 public class SerialColumn : SqlColumn

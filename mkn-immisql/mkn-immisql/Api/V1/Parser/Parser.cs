@@ -89,6 +89,11 @@ public static class Parser
         if (nodes[0].Equals("Select"))
             return new SelectCommand(nodes.Skip(1).ToList());
         
+        if (nodes[0].Equals("Delete From"))
+            return new DeleteCommand(nodes.Skip(1).ToList());
+        
+        if (nodes[0].Equals("Update"))
+            return new UpdateCommand(nodes.Skip(1).ToList());
         throw new Exception($"Unknown command {nodes[0]} {nodes[1]}");
     }
 
