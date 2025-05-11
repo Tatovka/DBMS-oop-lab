@@ -133,7 +133,7 @@ public class Table
     
     public Int32[] RowsWhere(WhereCondition? condition)
     {
-        if (condition is null) return Enumerable.Range(0, Columns.Length).ToArray();
+        if (condition is null) return Enumerable.Range(0, RowCount).ToArray();
         SqlColumn column = FindColumn(condition.ColName);
         return column.RowsWhere(condition);
     }

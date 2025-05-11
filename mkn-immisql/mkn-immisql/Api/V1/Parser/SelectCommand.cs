@@ -15,12 +15,9 @@ public class WhereCondition
     {
         try
         {
-            it.MoveNext();
-            ColName = it.Current.AsWord;
-            it.MoveNext();
-            Op = it.Current.AsWord;
-            it.MoveNext();
-            Value = it.Current.AsWord;
+            ColName = ICommand.Next(it).AsWord;
+            Op = ICommand.Next(it).AsWord;
+            Value = ICommand.Next(it).AsWord;
         } catch (Exception e)
         {
             throw new ArgumentException($"Cannot parse where condition: {e}");
@@ -36,10 +33,8 @@ public class OrderCondition
     {
         try
         {
-            it.MoveNext();
-            ColName = it.Current.AsWord;
-            it.MoveNext();
-            Direction = it.Current.AsWord;
+            ColName = ICommand.Next(it).AsWord;
+            Direction = ICommand.Next(it).AsWord;
         } catch (Exception e)
         {
             throw new ArgumentException($"Cannot parse order condition: {e}");
@@ -61,14 +56,13 @@ public class SelectCommand : ICommand
     private readonly Int64? _limit;
     public SelectCommand(List<IParserNode> args)
     {
-        var it = args.GetEnumerator();
-        if (!it.MoveNext()) throw new ArgumentException("Cannot parse select command: body is empty");
-        if (it.Current.Equals("*"))
+        IEnumerator<IParserNode> it = args.GetEnumerator();
+        if (ICommand.Next(it).Equals("*"))
         {
             _selectAll = true;
-            it.MoveNext();
-        }
-        else if (!it.Current.Equals("From"))
+            if (!ICommand.Next(it).Equals("From")) 
+                throw new ArgumentException($"Expected From, but found: {it.Current}");
+        } else
         {
             List<Word> blockWords = new();
             while (!it.Current.Equals("From"))
@@ -76,16 +70,15 @@ public class SelectCommand : ICommand
                 if (it.Current is Word colName)
                     blockWords.Add(colName);
                 else throw new ArgumentException($"Expected column name, but was {it.Current}");
-                if (!it.MoveNext()) throw new Exception("From not found after Select");
+                if (!it.MoveNext()) throw new Exception("From is not found after Select");
             }
             var retBlock = new Block(blockWords);
             _columnsNames = Parser.FlatArgList(Parser.SplitArgList(Parser.GetArgList(retBlock, out int _)));
         }
-        it.MoveNext();
         
-        if (it.Current is Word nameWord)
+        if (ICommand.Next(it) is Word nameWord)
             _tableName = nameWord.ToString();
-        else throw new ArgumentException($"Expected word as table name");
+        else throw new ArgumentException("Expected word as table name");
 
         while (it.MoveNext())
         {
@@ -107,12 +100,8 @@ public class SelectCommand : ICommand
                 
                 else if (kWord.Equals("Limit"))
                 {
-                    if (_limit is null)
-                    {
-                        it.MoveNext();
-                        Word lim = it.Current.AsWord;
-                        _limit = Int64.Parse(lim.ToString());
-                    }
+                    if (_limit is null) 
+                        _limit = Int64.Parse(ICommand.Next(it).AsWord.ToString());
                     else throw new ArgumentException("Limit condition was given twice");
                 }
                 else throw new ArgumentException("Unknown Select argument");
