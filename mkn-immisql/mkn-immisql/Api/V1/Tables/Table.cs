@@ -12,7 +12,6 @@ public class Table
     private static Table? SuccesfullTable;
     private static Table? FailedTable;
     public int RowCount { get; private set; }
-    private SqlColumn IdColumn;
 
     private readonly Dictionary<String, Int32> _colMap = new();
 

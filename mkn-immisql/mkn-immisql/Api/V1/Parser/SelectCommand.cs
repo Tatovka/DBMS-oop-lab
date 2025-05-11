@@ -55,10 +55,11 @@ public class SelectCommand : ParserIterator, ICommand
     private readonly Int64? _limit;
     public SelectCommand(List<IParserNode> args) : base(args)
     {
-        if (NextWord.Equals("*")) _selectAll = true;
-        else _columnsNames = ArgumentsList.UntilKeyword(this).Flatten;
-        if (StreamEnds || !NextWord.Equals("From")) 
+        _columnsNames = ArgumentsList.UntilKeyword(this).Flatten;
+        if (StreamEnds || !CurrentWord.Equals("From")) 
             throw new FormatException("From keyword not found in a select command");
+        if (_columnsNames.Count == 1 && _columnsNames[0].Equals("*")) 
+            _selectAll = true;
         _tableName = NextWord.GetName();
         //Parse flags
         while (MoveNext())
@@ -81,7 +82,7 @@ public class SelectCommand : ParserIterator, ICommand
                     _limit = Int64.Parse(NextWord.ToString());
                 else throw new ArgumentException("Limit condition was given twice");
             }
-            else throw new ArgumentException($"Unknown Select command flag {CurrentWord}");
+            else throw new ArgumentException($"Unknown Select command flag: {CurrentWord}");
         }
     }
     

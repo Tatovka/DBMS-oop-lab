@@ -53,6 +53,9 @@ public class Keyword
         new ("Update"),
         new ("Where"),
         new ("Returning"),
+        new ("From"),
+        new ("Default"),
+        new ("Set")
     };
 
     public static Dictionary<Word, Keyword> Beginings = new();

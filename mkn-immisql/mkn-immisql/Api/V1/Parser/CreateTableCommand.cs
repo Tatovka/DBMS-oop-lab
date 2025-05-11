@@ -13,58 +13,45 @@ namespace MknImmiSql.Api.V1.Parser;
 // columnN_name TYPE [NOT NULL] [DEFAULT value],
 // );
 
-public class CreateTableCommand : ICommand
+public class CreateTableCommand :  ParserIterator, ICommand
 {
     private readonly String _tableName;
     private readonly SqlColumn[] _columns;
     private readonly bool _hasPk;
 
     public int StatusCode { get; private set; }
-
-    enum ColumnParseState
-    {
-        Name, Type, Extra, Finished
-    }
-    
     public static string CommandName => "CREATE TABLE";
     private readonly bool _ifNotExists;
-    public CreateTableCommand(List<IParserNode> args)
+    public CreateTableCommand(List<IParserNode> args) : base(args)
     {
-        int nameIndex = 0;
-        
-        //Parsing flag
-        if (args[0].Equals("IF NOT EXISTS"))
+        if (NextWord.Equals("If Exists"))
         {
-            nameIndex++;
+            MoveNext();
             _ifNotExists = true;
         }
+        _tableName = CurrentWord.GetName();
         
-        //Parsing name
-        if (args[nameIndex] is Word nameWord && nameWord.IsName)
-            _tableName = nameWord.GetName();
-        else throw new Exception("table name should be a Word");
-        if (args.Count == nameIndex + 1)
+        //Parsing columns
+        if (!MoveNext())
         {
             _columns = Array.Empty<SqlColumn>();
             return;
         }
-        
-        //Parsing argument block
-        List<Word> colArgs = Parser.GetArgList(args[nameIndex + 1], out int columnsCount);
-        
-        //Parsing columns
-        _columns = new SqlColumn[columnsCount];
-        IEnumerator<Word> argEnumerator = colArgs.GetEnumerator();
-        for (int curColumn = 0; curColumn < columnsCount; curColumn++)
+        List<List<Word>> colArgs;
+        if (Current is Block block) 
+            colArgs = ArgumentsList.FromBlock(block).Data;
+        else throw new ArgumentException($"expected block of arguments, but found: {Current}");
+        _columns = new SqlColumn[colArgs.Count];
+        for (int curColumn = 0; curColumn < _columns.Length; curColumn++)
         {
-            _columns[curColumn] = ParseColumn(argEnumerator);
+            _columns[curColumn] = ParseColumn(colArgs[curColumn]);
             if (_columns[curColumn].IsPKey)
             {
                 if (!_hasPk) _hasPk = true;
                 else throw new Exception("Primary key cannot be given twice");
             }
         }
-        if (args.Count > nameIndex + 2) throw new Exception($"Too many arguments at {CommandName}");
+        if (MoveNext()) throw new Exception($"Too many arguments at {CommandName}");
     }
 
     public Table Execute()
@@ -79,56 +66,19 @@ public class CreateTableCommand : ICommand
         return Table.Failed;
     }
 
-    private static SqlColumn ParseColumn(IEnumerator<Word> arg)
+    private static SqlColumn ParseColumn(List<Word> args)
     {
-        ColumnParseState state = ColumnParseState.Name;
+        ParserIterator it = new ParserIterator(args.Select(x => x as IParserNode).ToList());
         SqlColumn.ColumnBuilder builder = new();
-        while(state != ColumnParseState.Finished && arg.MoveNext())
+        builder = builder.WithName(it.NextWord).WithType(it.NextWord);
+        while (it.MoveNext())
         {
-            var value = arg.Current;
-            switch (state)
-            {
-                case ColumnParseState.Name:
-                { 
-                    builder = builder.WithName(value);
-                    state = ColumnParseState.Type;
-                    break;
-                }
-                case ColumnParseState.Type:
-                {
-                    builder = builder.WithType(value);
-                    state = ColumnParseState.Extra;
-                    break;
-                }
-                case ColumnParseState.Extra:
-                {
-                    if (value.Equals(","))
-                    {
-                        state = ColumnParseState.Finished; 
-                        break;
-                    }
-                    
-                    if (value.Equals("NOT NULL"))
-                    {
-                        builder = builder.NotNullable;
-                        break;
-                    }
-                    
-                    if (value.Equals("PRIMARY KEY"))
-                    {
-                        builder = builder.HasPrimaryKey;
-                        break;
-                    }
-                    
-                    if (value.Equals("DEFAULT"))
-                    {
-                        arg.MoveNext();
-                        builder = builder.WithDefault(arg.Current);
-                        break;
-                    }
-                    throw new Exception($"Invalid argument {value}");
-                }
-            }
+            if (it.CurrentWord.Equals("Primary Key")) 
+                builder = builder.HasPrimaryKey;
+            else if (it.CurrentWord.Equals("Not Null"))
+                builder = builder.NotNullable;
+            else if (it.CurrentWord.Equals("Default"))
+                builder = builder.WithDefault(it.NextWord);
         }
         return builder.Create();
     }

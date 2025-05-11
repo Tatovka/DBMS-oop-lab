@@ -12,15 +12,24 @@ public class ParserIterator
         get
         {
             if (++_streamIndex >= _sourceList.Count) 
-                throw new IndexOutOfRangeException("Failed to parse Update command: stream ends");
+                throw new IndexOutOfRangeException("Failed to parse command: stream ends");
             return _sourceList[_streamIndex];
         }
     }
     public Word NextWord => Next.AsWord;
     public IParserNode Current => _sourceList[_streamIndex];
     public Word CurrentWord => Current.AsWord;
-    public bool StreamEnds => _streamIndex == _sourceList.Count;
-    public bool MoveNext() => ++_streamIndex < _sourceList.Count;
+    public bool StreamEnds => _streamIndex >= _sourceList.Count;
+
+    public bool MoveNext()
+    {
+        if (_streamIndex < _sourceList.Count)
+        {
+            ++_streamIndex;
+            return _streamIndex < _sourceList.Count;
+        }
+        return false;
+    }
 
     public ParserIterator(List<IParserNode> list)
     {
