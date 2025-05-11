@@ -22,7 +22,7 @@ public class InsertCommand : ICommand
         var it = args.GetEnumerator();
         it.MoveNext();
         if (it.Current is Word nameWord && nameWord.IsName)
-            _tableName = nameWord.ToString();
+            _tableName = nameWord.GetName();
         else throw new Exception("Table name should be a Word");
         //Parsing argument block
         if (!it.MoveNext()) throw new Exception("Column names should be given");

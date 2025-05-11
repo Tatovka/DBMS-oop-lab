@@ -39,7 +39,7 @@ public class UpdateCommand : ICommand
     {
         IEnumerator<IParserNode> it = args.GetEnumerator();
         if (ICommand.Next(it) is Word nameWord)
-            _tableName = nameWord.ToString();
+            _tableName = nameWord.GetName();
         else throw new ArgumentException("Expected word as table name");
         
         if (!ICommand.Next(it).Equals("Set")) throw new ArgumentException("Set not found in Update request");

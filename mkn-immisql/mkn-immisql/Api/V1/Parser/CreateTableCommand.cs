@@ -31,6 +31,7 @@ public class CreateTableCommand : ICommand
     public CreateTableCommand(List<IParserNode> args)
     {
         int nameIndex = 0;
+        
         //Parsing flag
         if (args[0].Equals("IF NOT EXISTS"))
         {
@@ -39,12 +40,14 @@ public class CreateTableCommand : ICommand
         }
         
         //Parsing name
-        if (args.Count != 2 + nameIndex) 
-            throw new Exception($"Wrong number of arguments to {CommandName}: {args.Count}\n" +
-                                $"Expected: {1 + nameIndex}");
         if (args[nameIndex] is Word nameWord && nameWord.IsName)
-            _tableName = nameWord.ToString();
+            _tableName = nameWord.GetName();
         else throw new Exception("table name should be a Word");
+        if (args.Count == nameIndex + 1)
+        {
+            _columns = Array.Empty<SqlColumn>();
+            return;
+        }
         
         //Parsing argument block
         List<Word> colArgs = Parser.GetArgList(args[nameIndex + 1], out int columnsCount);
@@ -61,7 +64,7 @@ public class CreateTableCommand : ICommand
                 else throw new Exception("Primary key cannot be given twice");
             }
         }
-        
+        if (args.Count > nameIndex + 2) throw new Exception($"Too many arguments at {CommandName}");
     }
 
     public Table Execute()

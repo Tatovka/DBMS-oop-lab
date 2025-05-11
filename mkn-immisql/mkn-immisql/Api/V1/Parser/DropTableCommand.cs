@@ -23,7 +23,7 @@ public class DropTableCommand : ICommand
             throw new Exception($"Wrong number of arguments to {CommandName}: {args.Count}\n" +
                                 $"Expected: {1 + nameIndex}");
         if (args[nameIndex] is Word nameWord)
-            _tableName = nameWord.ToString();
+            _tableName = nameWord.GetName();
         else throw new Exception("table name should be a Word");
     }
 

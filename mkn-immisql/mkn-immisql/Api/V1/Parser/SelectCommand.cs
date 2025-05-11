@@ -76,7 +76,7 @@ public class SelectCommand : ICommand
         }
         
         if (ICommand.Next(it) is Word nameWord)
-            _tableName = nameWord.ToString();
+            _tableName = nameWord.GetName();
         else throw new ArgumentException("Expected word as table name");
 
         while (it.MoveNext())

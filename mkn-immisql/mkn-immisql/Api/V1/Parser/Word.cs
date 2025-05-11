@@ -36,6 +36,12 @@ public class Word : IParserNode
         return other.Equals(_value, StringComparison.InvariantCultureIgnoreCase);;
     }
 
+    public String GetName()
+    {
+        if (_value[0] == '\"' && _value.Last() == '\"') return _value.Substring(1, _value.Length - 2);
+        return _value;
+    }
+    
     public Word AsWord  => this;
     public bool IsName => (_value[0] == '"' && _value.Last() == '"') || NameFormat.IsMatch(_value);
     public bool IsKeyword => Keyword.KeywordList.Contains(this);
