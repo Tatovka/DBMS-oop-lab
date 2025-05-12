@@ -24,7 +24,7 @@ public class CreateTableCommand :  ParserIterator, ICommand
     private readonly bool _ifNotExists;
     public CreateTableCommand(List<IParserNode> args) : base(args)
     {
-        if (NextWord.Equals("If Exists"))
+        if (NextWord.Equals("If Not Exists"))
         {
             MoveNext();
             _ifNotExists = true;
@@ -79,6 +79,7 @@ public class CreateTableCommand :  ParserIterator, ICommand
                 builder = builder.NotNullable;
             else if (it.CurrentWord.Equals("Default"))
                 builder = builder.WithDefault(it.NextWord);
+            else throw new ArgumentException($"Unknown create table flag: {it.CurrentWord}");
         }
         return builder.Create();
     }
