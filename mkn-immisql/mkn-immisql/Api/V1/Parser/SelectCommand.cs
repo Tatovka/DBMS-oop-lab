@@ -54,6 +54,7 @@ public class SelectCommand : ParserIterator, ICommand
     private readonly OrderCondition? _orderCondition;
     private readonly WhereCondition? _whereConditions;
     private readonly Int64? _limit;
+    private ICommand workingTable;
     public SelectCommand(List<IParserNode> args) : base(args)
     { 
         if (args[0].Equals("*")) 
@@ -64,7 +65,19 @@ public class SelectCommand : ParserIterator, ICommand
         else GetNames(ArgumentsList.Until(this, "From"));
         if (StreamEnds || !CurrentWord.Equals("From")) 
             throw new FormatException("From keyword not found in a select command");
-        _tableName = NextWord.GetName();
+        var tableArg = Next;
+        if (tableArg is Word word)
+        {
+            if (word.IsKeyword)
+            {
+                workingTable = Parser.GetCommand(new Block(this));
+                return;
+            }
+            if (word.IsName) workingTable = new NameCommand(word);
+            
+            else throw new ArgumentException($"Cannot parse table from: {word}");
+        }
+        else workingTable = Parser.GetCommand(tableArg as Block);
         //Parse flags
         while (MoveNext())
         {
@@ -112,13 +125,16 @@ public class SelectCommand : ParserIterator, ICommand
     
     public Table Execute()
     {
-        if (Database.TryGetTable(_tableName, out var table))
+        Table table = workingTable.Execute();
+        if (workingTable.StatusCode == 200)
         {
             StatusCode = 200;
             var rows = table!.RowsWhere(_whereConditions);
             rows = table.OrderRowsBy(_orderCondition, rows);
             if (_limit is not null) rows = rows.Take((int)_limit.Value).ToArray();
-            return _selectAll? table.SelectAllColumns(rows) : table.SelectColumns(_columnsNames, rows, _columnsResultNames);
+            return _selectAll
+                ? table.SelectAllColumns(rows)
+                : table.SelectColumns(_columnsNames, rows, _columnsResultNames);
         }
         StatusCode = 404;
         return Table.Failed;

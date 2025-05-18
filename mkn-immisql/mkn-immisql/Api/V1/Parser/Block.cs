@@ -7,7 +7,7 @@ namespace MknImmiSql.Api.V1.Parser;
 
 public class Block : IParserNode
 {
-    public List<IParserNode> Children = new();
+    public readonly List<IParserNode> Children = new();
 
     public readonly bool HasBlocks;
     public Block(List<String> words)
@@ -120,4 +120,14 @@ public class Block : IParserNode
     }
 
     public int CountArgs => Children.Count(word => word.Equals(","));
+
+    public Block (ParserIterator it)
+    {
+        while (!it.StreamEnds)
+        {
+            if (!HasBlocks && it.Current is Block) HasBlocks = true;
+            Children.Add(it.Current);
+            it.MoveNext();
+        }
+    }
 }

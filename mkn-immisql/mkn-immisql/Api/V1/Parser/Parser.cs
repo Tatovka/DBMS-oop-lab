@@ -96,7 +96,8 @@ public static class Parser
             return new UpdateCommand(nodes.Skip(1).ToList());
         throw new Exception($"Unknown command {nodes[0]} {nodes[1]}");
     }
-
+    
+    
     public static List<Word> GetArgList(IParserNode node, out Int32 count)
     {
         if (node is Block argsBlock)
