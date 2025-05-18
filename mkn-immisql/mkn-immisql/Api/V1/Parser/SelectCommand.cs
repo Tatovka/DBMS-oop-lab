@@ -43,8 +43,7 @@ public class OrderCondition
 }
 
 public class SelectCommand : ParserIterator, ICommand
-{
-    private readonly String _tableName;
+{ 
     public Int32 StatusCode { get; private set; }
     
     private readonly List<Word> _columnsNames = new ();
@@ -54,7 +53,7 @@ public class SelectCommand : ParserIterator, ICommand
     private readonly OrderCondition? _orderCondition;
     private readonly WhereCondition? _whereConditions;
     private readonly Int64? _limit;
-    private ICommand workingTable;
+    private ICommand _workingTable;
     public SelectCommand(List<IParserNode> args) : base(args)
     { 
         if (args[0].Equals("*")) 
@@ -70,14 +69,14 @@ public class SelectCommand : ParserIterator, ICommand
         {
             if (word.IsKeyword)
             {
-                workingTable = Parser.GetCommand(new Block(this));
+                _workingTable = Parser.GetCommand(new Block(this));
                 return;
             }
-            if (word.IsName) workingTable = new NameCommand(word);
+            if (word.IsName) _workingTable = new NameCommand(word);
             
             else throw new ArgumentException($"Cannot parse table from: {word}");
         }
-        else workingTable = Parser.GetCommand(tableArg as Block);
+        else _workingTable = Parser.GetCommand(tableArg as Block);
         //Parse flags
         while (MoveNext())
         {
@@ -125,8 +124,8 @@ public class SelectCommand : ParserIterator, ICommand
     
     public Table Execute()
     {
-        Table table = workingTable.Execute();
-        if (workingTable.StatusCode == 200)
+        Table table = _workingTable.Execute();
+        if (_workingTable.StatusCode == 200)
         {
             StatusCode = 200;
             var rows = table!.RowsWhere(_whereConditions);
@@ -136,7 +135,7 @@ public class SelectCommand : ParserIterator, ICommand
                 ? table.SelectAllColumns(rows)
                 : table.SelectColumns(_columnsNames, rows, _columnsResultNames);
         }
-        StatusCode = 404;
+        StatusCode = _workingTable.StatusCode;
         return Table.Failed;
     }
 }
