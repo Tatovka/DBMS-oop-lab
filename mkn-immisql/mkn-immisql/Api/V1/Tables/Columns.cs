@@ -143,9 +143,9 @@ public class SqlColumn
             _rows.RemoveAt(indexes[i] - i);
     }
     
-    public virtual SqlColumn CopyRows(Int32[] indexes)
+    public virtual SqlColumn CopyRows(Int32[] indexes, String name)
     {
-        SqlColumn result =  new SqlColumn(Type, Name, IsPKey, _defaultValue);
+        SqlColumn result =  new SqlColumn(Type, name, IsPKey, _defaultValue);
         foreach (var index in indexes)
         {
             result._rows.Add(_rows[index]);
@@ -213,9 +213,9 @@ public class SerialColumn : SqlColumn
         return result;
     }
     
-    public override SqlColumn CopyRows(Int32[] indexes)
+    public override SqlColumn CopyRows(Int32[] indexes, String name)
     {
-        SerialColumn result =  new SerialColumn(Name);
+        SerialColumn result =  new SerialColumn(name);
         Int64 maxValue = 0;
         foreach (var index in indexes)
         {

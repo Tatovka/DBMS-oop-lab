@@ -40,7 +40,7 @@ public class DeleteCommand : ParserIterator, ICommand
             StatusCode = 200;
             var removingRows = table!.RowsWhere(_whereConditions);
             Table result = _returningColumns is not null? 
-                table.SelectColumns(_returningColumns, removingRows) : Table.Empty;
+                table.SelectColumns(_returningColumns, removingRows, _returningColumns) : Table.Empty;
             table.RemoveRows(removingRows);
             return result;
         }

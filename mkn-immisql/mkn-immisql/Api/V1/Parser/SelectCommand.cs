@@ -48,18 +48,22 @@ public class SelectCommand : ParserIterator, ICommand
     public Int32 StatusCode { get; private set; }
     
     private readonly List<Word> _columnsNames = new ();
+    private readonly List<Word> _columnsResultNames = new ();
     private readonly bool _selectAll;
     
     private readonly OrderCondition? _orderCondition;
     private readonly WhereCondition? _whereConditions;
     private readonly Int64? _limit;
     public SelectCommand(List<IParserNode> args) : base(args)
-    {
-        _columnsNames = ArgumentsList.UntilKeyword(this).Flatten;
+    { 
+        if (args[0].Equals("*")) 
+        { 
+            _selectAll = true; 
+            MoveNext(); MoveNext();
+        }
+        else GetNames(ArgumentsList.Until(this, "From"));
         if (StreamEnds || !CurrentWord.Equals("From")) 
             throw new FormatException("From keyword not found in a select command");
-        if (_columnsNames.Count == 1 && _columnsNames[0].Equals("*")) 
-            _selectAll = true;
         _tableName = NextWord.GetName();
         //Parse flags
         while (MoveNext())
@@ -85,6 +89,26 @@ public class SelectCommand : ParserIterator, ICommand
             else throw new ArgumentException($"Unknown Select command flag: {CurrentWord}");
         }
     }
+
+    void GetNames(ArgumentsList names)
+    {
+        while (names.MoveNext)
+        {
+            var curList = names.Current;
+            if (curList.Count != 1 && curList.Count != 3) 
+                throw new Exception("Column name statement doesn't template Name [As ResultName]");
+            Word name = new(curList[0].GetName());
+            Word resultName = name;
+            if (curList.Count == 3)
+            {
+                if (curList[1].Equals("As"))
+                    resultName = new(curList[2].GetName());
+                else throw new Exception($"As expected, but found: {curList[1]}");
+            }
+            _columnsNames.Add(name);
+            _columnsResultNames.Add(resultName);
+        }
+    }
     
     public Table Execute()
     {
@@ -94,7 +118,7 @@ public class SelectCommand : ParserIterator, ICommand
             var rows = table!.RowsWhere(_whereConditions);
             rows = table.OrderRowsBy(_orderCondition, rows);
             if (_limit is not null) rows = rows.Take((int)_limit.Value).ToArray();
-            return _selectAll? table.SelectAllColumns(rows) : table.SelectColumns(_columnsNames, rows);
+            return _selectAll? table.SelectAllColumns(rows) : table.SelectColumns(_columnsNames, rows, _columnsResultNames);
         }
         StatusCode = 404;
         return Table.Failed;

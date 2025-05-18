@@ -8,6 +8,12 @@ public class ArgumentsList
 {
     public readonly List<List<Word>> Data;
 
+    public List<Word> Current => Data[_curIndex];
+    public bool MoveNext => ++_curIndex < Size;
+    
+    
+    private int _curIndex = -1;
+    
     public Int32 Size => Data.Count;
     public ArgumentsList(List<Word> data)
     {
@@ -48,6 +54,14 @@ public class ArgumentsList
         return new ArgumentsList(blockWords);
     }
 
+    public static ArgumentsList Until(ParserIterator it, String word)
+    {
+        List<Word> blockWords = new();
+        while (it.MoveNext() && !it.CurrentWord.Equals(word))
+            blockWords.Add(it.CurrentWord);
+        return new ArgumentsList(blockWords);
+    }
+    
     public static ArgumentsList FromBlock(Block block)
     {
         if (block.HasBlocks) throw new Exception("Arguments must not to be blocks");

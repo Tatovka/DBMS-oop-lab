@@ -106,12 +106,12 @@ public class Table
     }
     
 
-    public Table SelectColumns(List<Word> colNames, Int32[] rows)
+    public Table SelectColumns(List<Word> colNames, Int32[] rows, List<Word> resultNames)
     {
         var returnColumns = new SqlColumn[colNames.Count];
         for (int i = 0; i < returnColumns.Length; i++)
         {
-            returnColumns[i] = FindColumn(colNames[i]).CopyRows(rows);
+            returnColumns[i] = FindColumn(colNames[i]).CopyRows(rows, resultNames[i].ToString());
         }
         var resTable = new Table(returnColumns);
         resTable.RowCount = rows.Length;
@@ -123,7 +123,7 @@ public class Table
         var returnColumns = new SqlColumn[Columns.Length];
         for (int i = 0; i < Columns.Length; i++)
         {
-            returnColumns[i] = Columns[i].CopyRows(rows);
+            returnColumns[i] = Columns[i].CopyRows(rows, Columns[i].Name);
         }
         var resTable = new Table(returnColumns);
         resTable.RowCount = rows.Length;

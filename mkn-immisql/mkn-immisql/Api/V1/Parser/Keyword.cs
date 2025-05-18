@@ -39,6 +39,7 @@ public class Keyword
         foreach (var kw in KeywordList)
             AddKeyword(kw);
     }
+    
     public static readonly Word[] KeywordList =
     {
         new ("IF NOT EXISTS"),
@@ -55,7 +56,12 @@ public class Keyword
         new ("Returning"),
         new ("From"),
         new ("Default"),
-        new ("Set")
+        new ("Set"),
+        new ("Join"),
+        new ("Inner"),
+        new ("Left"),
+        new ("Right"),
+        new ("*")
     };
 
     public static Dictionary<Word, Keyword> Beginings = new();

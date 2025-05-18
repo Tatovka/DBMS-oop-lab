@@ -57,7 +57,7 @@ public class InsertCommand : ParserIterator, ICommand
             }
             if (returningColumns.Count != 0) 
                 retTable = table!.SelectColumns(returningColumns, 
-                    Enumerable.Range(table.RowCount-rows.Count, rows.Count).ToArray());
+                    Enumerable.Range(table.RowCount-rows.Count, rows.Count).ToArray(), returningColumns);
             StatusCode = 200;
             return retTable;
         }

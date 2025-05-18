@@ -78,7 +78,7 @@ public class UpdateCommand : ParserIterator, ICommand
             }
 
             Table result = _returningColumns is not null? 
-                table.SelectColumns(_returningColumns, updatingRows) : Table.Empty;
+                table.SelectColumns(_returningColumns, updatingRows, _returningColumns) : Table.Empty;
             return result;
         }
         StatusCode = 404;
