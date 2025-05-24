@@ -52,7 +52,7 @@ public class Block : IParserNode
             }
         }
         
-        if (Children.Last().Equals(";")) Children.RemoveAt(Children.Count - 1);
+        if (Children.Count != 0 && Children.Last().Equals(";")) Children.RemoveAt(Children.Count - 1);
         Children = GroupKeyWords(Children);
     }
 

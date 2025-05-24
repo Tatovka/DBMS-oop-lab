@@ -199,18 +199,16 @@ public class Table
         throw new Exception($"Table does not contains column with name {name}");
     }
 
-    public JoinTable Concat(Table right, String name1, String name2, bool nullable)
+    public JoinTable Concat(Table right, String name1, String name2, bool leftNullable, bool rightNullable)
     {
         SqlColumn[] cols = new SqlColumn[right.Columns.Length + Columns.Length];
         for (int col = 0; col < Columns.Length; col++)
-            cols[col] = Columns[col].JoinCopy(name1, nullable);
+            cols[col] = Columns[col].JoinCopy(name1, leftNullable);
         for (int col = 0; col < right.Columns.Length; col++)
-            cols[col + Columns.Length] = right.Columns[col].JoinCopy(name2, nullable);
+            cols[col + Columns.Length] = right.Columns[col].JoinCopy(name2, rightNullable);
         var result = new JoinTable(cols, this, right, name1, name2);
         return result;
     }
-
-    
 }
 
 public class JoinTable : Table

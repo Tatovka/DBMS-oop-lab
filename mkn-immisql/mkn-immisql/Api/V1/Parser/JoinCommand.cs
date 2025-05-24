@@ -71,8 +71,8 @@ public class JoinCommand : ParserIterator, ICommand
         if (Database.TryGetTable(_leftTableName, out var leftTable) &&
             Database.TryGetTable(_rightTableName, out var rightTable))
         {
-            JoinTable resultTable = leftTable!
-                .Concat(rightTable!, _leftTableName, _rightTableName, _type != JoinType.Inner);
+            JoinTable resultTable = leftTable!.Concat(rightTable!, _leftTableName, _rightTableName, 
+                _type == JoinType.Right, _type == JoinType.Left);
             switch (_type)
             {
                 case JoinType.Inner:

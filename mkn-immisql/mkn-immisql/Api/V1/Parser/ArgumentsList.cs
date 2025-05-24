@@ -39,8 +39,9 @@ public class ArgumentsList
             var result = new List<Word>();
             foreach (var sublist in Data)
             {
-                if (sublist.Count != 1) 
+                if (sublist.Count > 1) 
                     throw new ArgumentException($"Required single word argument, but was {sublist}");
+                if (sublist.Count != 0)
                 result.Add(sublist[0]);
             }
             return result;
