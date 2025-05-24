@@ -7,19 +7,13 @@ namespace MknImmiSql.Api.V1;
 
 public class TerminateToken
 {
-    public String? Token { get; set; } = String.Empty;
-    public TerminateToken? token { get; set; }
+   [Required] public String Token { get; set; } = String.Empty;
     public override bool Equals(object other)
     {
         if (other is TerminateToken)
              return Token == (other as TerminateToken).Token;
         return false;
     }
-}
-
-public class NestedToken
-{
-    public TerminateToken Token { get; set; }
 }
 
 [Route("api/v1/terminate")]
@@ -44,5 +38,4 @@ public class TerminateController : Controller
         }
         return StatusCode(403);
     }
-
 }
