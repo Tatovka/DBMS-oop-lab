@@ -83,7 +83,7 @@ public class SqlColumn
     protected readonly List<ISqlValue> _rows = new ();
     public readonly SqlType Type;
     private readonly DefaultSqlValue _defaultValue;
-    protected SqlColumn(SqlType type, String name, Boolean isPKey, DefaultSqlValue defaultValue)
+    internal SqlColumn(SqlType type, String name, Boolean isPKey, DefaultSqlValue defaultValue)
     {
         Type = type;
         Name = name;
@@ -130,16 +130,7 @@ public class SqlColumn
         return result;
     }
     public static ColumnBuilder GetBuilder => new ColumnBuilder();
-
-    public virtual SqlColumn CopyThis()
-    {
-        var result =  new SqlColumn(Type, Name, IsPKey, _defaultValue);
-        foreach (var val in _rows)
-        {
-            result._rows.Add(val);
-        }
-        return result;
-    }
+    
 
     public void RemoveRows(Int32[] indexes)
     {
@@ -191,12 +182,10 @@ public class SqlColumn
             _rows[index] = parsedValue;
         }
     }
-
-    public SqlColumn JoinCopy(String tableName, bool nullable)
-    {
-        var result = new SqlColumn(nullable ? Type.GetNullable : Type, $"{tableName}.{Name}", false, _defaultValue);
-        return result;
-    }
+    
+    public virtual SqlColumn JoinCopy(String tableName, bool nullable) => 
+        new (nullable ? Type.GetNullable : Type, $"{tableName}.{Name}", false, _defaultValue);
+    
 }
 
 public class SerialColumn : SqlColumn
@@ -211,17 +200,6 @@ public class SerialColumn : SqlColumn
         if (!word.Equals(Word.Default)) throw new ArgumentException("Serial value must sets automatically");
         return Type.Parse(new Word($"{++_curValue}"));
     }
-    public override SqlColumn CopyThis()
-    {
-        var result =  new SerialColumn(Name);
-        foreach (var val in _rows)
-        {
-            result._rows.Add(val);
-        }
-
-        result._curValue = _curValue;
-        return result;
-    }
     
     public override SqlColumn CopyRows(Int32[] indexes, String name)
     {
@@ -235,5 +213,6 @@ public class SerialColumn : SqlColumn
         result._curValue = maxValue;
         return result;
     }
-    
+    public override SqlColumn JoinCopy(String tableName, bool nullable) => 
+        new (nullable ? Type.GetNullable : new SqlInteger(false), $"{tableName}.{Name}", false, DefaultSqlValue.NotSpecified);
 }
