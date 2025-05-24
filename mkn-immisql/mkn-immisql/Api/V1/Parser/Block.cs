@@ -123,11 +123,10 @@ public class Block : IParserNode
 
     public Block (ParserIterator it)
     {
-        while (!it.StreamEnds)
+        while (it.MoveNext())
         {
             if (!HasBlocks && it.Current is Block) HasBlocks = true;
             Children.Add(it.Current);
-            it.MoveNext();
         }
     }
 }

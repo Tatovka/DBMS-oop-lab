@@ -30,9 +30,19 @@ public class ParserIterator
         }
         return false;
     }
-
+    
     public ParserIterator(List<IParserNode> list)
     {
         _sourceList = list;
+    }
+
+    protected bool MoveBack()
+    {
+        if (_streamIndex >= 0)
+        {
+            --_streamIndex;
+            return _streamIndex >= 0;
+        }
+        return false;
     }
 }

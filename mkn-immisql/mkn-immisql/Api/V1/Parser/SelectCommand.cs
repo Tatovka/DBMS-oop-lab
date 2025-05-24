@@ -67,12 +67,23 @@ public class SelectCommand : ParserIterator, ICommand
         var tableArg = Next;
         if (tableArg is Word word)
         {
-            if (word.IsKeyword)
+            if (word.IsCommandName)
             {
+                MoveBack();
                 _workingTable = Parser.GetCommand(new Block(this));
                 return;
             }
-            if (word.IsName) _workingTable = new NameCommand(word);
+            if (word.IsName)
+            {
+                if (MoveNext() && CurrentWord.IsCommandName)
+                {
+                    MoveBack();
+                    MoveBack();
+                    _workingTable = Parser.GetCommand(new Block(this));
+                    return;
+                }
+                _workingTable = new NameCommand(word);
+            }
             
             else throw new ArgumentException($"Cannot parse table from: {word}");
         }

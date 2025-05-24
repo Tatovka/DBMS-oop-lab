@@ -76,7 +76,12 @@ public static class Parser
     {
         var nodes = block.Children;
         if (nodes.Count() < 2 ) throw new Exception("Cannot found command");
-        
+        if (!nodes[0].AsWord.IsCommandName)
+        {
+            if (nodes[1].Equals("Left Join") || nodes[1].Equals("Right Join") 
+                || nodes[1].Equals("Inner Join") || nodes[1].Equals("Join"))
+                return new JoinCommand(nodes.ToList());
+        }
         if (nodes[0].Equals("CREATE TABLE"))
             return new CreateTableCommand(nodes.Skip(1).ToList());
         

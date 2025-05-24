@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,8 +11,8 @@ public class Keyword
     
     private Keyword(Word name)
     {
-        this.Name = name;
-        this.PossibleContinues = new();
+        Name = name;
+        PossibleContinues = new();
     }
 
     private void AddContinue(Keyword kw)
@@ -40,30 +41,35 @@ public class Keyword
             AddKeyword(kw);
     }
     
-    public static readonly Word[] KeywordList =
+    public static readonly Word[] ParametrsNames =
     {
-        new ("IF NOT EXISTS"),
-        new ("IF EXISTS"),
-        new ("CREATE TABLE"),
-        new ("PRIMARY KEY"),
-        new ("DROP TABLE"),
-        new ("NOT NULL"),
-        new ("INSERT INTO"),
+        new ("If Not Exists"),
+        new ("If Exists"),
+        new ("Primary Key"),
+        new ("Not Null"),
         new ("Order By"),
-        new ("Delete From"),
-        new ("Update"),
         new ("Where"),
         new ("Returning"),
-        new ("Select"),
         new ("From"),
         new ("Default"),
         new ("Set"),
-        new ("Join"),
-        new ("Inner"),
-        new ("Left"),
-        new ("Right")
     };
 
+    public static readonly Word[] CommandNames =
+    {
+        new("Join"),
+        new("Left Join"),
+        new("Right Join"),
+        new("Inner Join"),
+        new("Create Table"),
+        new("Drop Table"),
+        new("Insert Into"),
+        new("Delete From"),
+        new("Select"),
+        new("Update"),
+    };
+    public static readonly Word[] KeywordList = ParametrsNames.Concat(CommandNames).ToArray();
+    
     public static Dictionary<Word, Keyword> Beginings = new();
     
     public bool IsLeaf => PossibleContinues.Count == 0;

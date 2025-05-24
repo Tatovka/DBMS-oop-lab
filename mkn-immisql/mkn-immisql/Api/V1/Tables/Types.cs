@@ -17,6 +17,8 @@ public abstract class SqlType
     {
         IsNullable = isNullable;
     }
+    
+    public abstract SqlType GetNullable { get; }
 }
 
 public interface ISqlValue
@@ -42,6 +44,9 @@ public readonly struct SqlNull : ISqlValue
 {
     public string Value => "NULL";
 
+    public static SqlNull Instance { get; } = new();
+    public SqlNull() { }
+    
     public bool CompareWith(Word op, ISqlValue other)
     {
         if (op.Equals("=")) return other is SqlNull;
@@ -75,14 +80,15 @@ public class SqlBoolean : SqlType
     {
         if (word.Equals("NULL"))
         {
-            if (IsNullable) return new SqlNull();
+            if (IsNullable) return SqlNull.Instance;
             throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (bool.TryParse(word.ToString(), out bool result))
             return new SqlBoolValue(result);
         throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
-    public SqlBoolean(bool isNullable) : base(isNullable){ }
+    public SqlBoolean(bool isNullable) : base(isNullable) { }
+    public override SqlType GetNullable => new SqlBoolean(true);
 }
 
 public class SqlInteger : SqlType
@@ -119,7 +125,7 @@ public class SqlInteger : SqlType
     {
         if (word.Equals("NULL"))
         {
-            if (IsNullable) return new SqlNull();
+            if (IsNullable) return SqlNull.Instance;
             throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (Int64.TryParse(word.ToString(), out Int64 result))
@@ -127,6 +133,7 @@ public class SqlInteger : SqlType
         throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
     public SqlInteger(bool isNullable) : base(isNullable){ }
+    public override SqlType GetNullable => new SqlInteger(true);
 }
 
 public class SqlFloat : SqlType
@@ -162,7 +169,7 @@ public class SqlFloat : SqlType
     {
         if (word.Equals("NULL"))
         {
-            if (IsNullable) return new SqlNull();
+            if (IsNullable) return SqlNull.Instance;
             throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (Double.TryParse(word.ToString(), out Double result))
@@ -170,6 +177,7 @@ public class SqlFloat : SqlType
         throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
     public SqlFloat(bool isNullable) : base(isNullable){ }
+    public override SqlType GetNullable => new SqlFloat(true);
 }
 
 public class SqlString : SqlType
@@ -207,7 +215,7 @@ public class SqlString : SqlType
     {
         if (word.Equals("NULL"))
         {
-            if (IsNullable) return new SqlNull();
+            if (IsNullable) return SqlNull.Instance;
             throw new Exception($"Cannot assign null to non-nullable {TypeName}");
         }
         if (word.IsString)
@@ -218,12 +226,14 @@ public class SqlString : SqlType
         throw new ArgumentException($"Cannot parse {TypeName} from value {word}");
     }
     public SqlString(bool isNullable) : base(isNullable){ }
+    public override SqlType GetNullable => new SqlString(true);
 }
 
 public class SqlSerial : SqlInteger
 {
     public override String TypeName => "serial";
     public SqlSerial(bool isNullable) : base(isNullable) { }
+    public override SqlType GetNullable => new SqlInteger(true);
 }
 
 public class DefaultSqlValue
@@ -238,7 +248,7 @@ public class DefaultSqlValue
     private DefaultSqlValue(bool isSpecified)
     {
         IsSpecified = isSpecified;
-        Value = new SqlNull();
+        Value = SqlNull.Instance;
     }
     public static DefaultSqlValue WithValue(SqlType type, Word val) => new (type, true, val);
     public static DefaultSqlValue NotSpecified => new (false);

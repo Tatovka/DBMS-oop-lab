@@ -95,8 +95,15 @@ public class SqlColumn
         _rows.Add(Type.Parse(value));
     }
 
+    public void AddRow(ISqlValue value)
+    {
+        _rows.Add(value);
+    }
+
     public string AtRow(int index) => _rows[index].Value;
 
+    public ISqlValue ValueAtRow(int index) => _rows[index];
+    
     public virtual ISqlValue Parse(Word word)
     {
         ISqlValue parsedValue;
@@ -185,6 +192,12 @@ public class SqlColumn
             }
             _rows[index] = val;
         }
+    }
+
+    public SqlColumn JoinCopy(String tableName, bool nullable)
+    {
+        var result = new SqlColumn(Type.GetNullable, $"{tableName}.{Name}", false, _defaultValue);
+        return result;
     }
 }
 

@@ -8,7 +8,7 @@ namespace MknImmiSql.Api.V1.Tables;
 public class Table
 {
     public SqlColumn[] Columns;
-    private ISqlValue[][] _data;
+    internal ISqlValue[][] _data;
     private static Table? SuccesfullTable;
     private static Table? FailedTable;
     public int RowCount { get; private set; }
@@ -24,6 +24,19 @@ public class Table
         _data = _data.Append(row).ToArray();
         RowCount++;
     }
+    public void AddRow(ICollection<ISqlValue> values)
+    {
+        if (values.Count != Columns.Length) throw new ArgumentException("values.Count != Columns.Length");
+        ISqlValue[] row = new ISqlValue[Columns.Length];
+        for (int i = 0; i < Columns.Length; i++)
+        {
+            Columns[i].AddRow(values.ElementAt(i));
+            row[i] = values.ElementAt(i);
+        }
+        _data = _data.Append(row).ToArray();
+        RowCount++;
+    }
+    
     public Table(SqlColumn[] columns)
     {
         Columns = columns;
@@ -165,7 +178,12 @@ public class Table
         SqlColumn column = FindColumn(condition.ColName);
         return column.RowsWhere(condition);
     }
-    
+    public Int32[] RowsOn(WhereCondition? condition)
+    {
+        if (condition is null) return Enumerable.Range(0, RowCount).ToArray();
+        SqlColumn column = FindColumn(condition.ColName);
+        return column.RowsWhere(condition);
+    }
     public Int32[] OrderRowsBy(OrderCondition? condition, Int32[] indexes)
     {
         if (condition is null) return indexes;
@@ -173,11 +191,123 @@ public class Table
         return column.OrderRowsByThis(condition.Direction, indexes);
     }
 
-    private SqlColumn FindColumn(Word name)
+    public SqlColumn FindColumn(Word name)
     {
-        if (_colMap.TryGetValue(name.ToString(), out int index))
+        if (_colMap.TryGetValue(name.GetName(), out int index))
             return Columns[index];
         throw new Exception($"Table does not contains column with name {name}");
     }
+
+    public JoinTable Concat(Table right, String name1, String name2, bool nullable)
+    {
+        SqlColumn[] cols = new SqlColumn[right.Columns.Length + Columns.Length];
+        for (int col = 0; col < Columns.Length; col++)
+            cols[col] = Columns[col].JoinCopy(name1, nullable);
+        for (int col = 0; col < right.Columns.Length; col++)
+            cols[col + Columns.Length] = right.Columns[col].JoinCopy(name2, nullable);
+        var result = new JoinTable(cols, this, right, name1, name2);
+        return result;
+    }
+
+    
 }
 
+public class JoinTable : Table
+{
+    private Table _lTable;
+    private Table _rTable;
+    private String _lName;
+    private String _rName;
+
+    public JoinTable(SqlColumn[] cols, Table left, Table right, String name1, String name2) : base(cols)
+    {
+        _lTable = left;
+        _rTable = right;
+        _lName = name1;
+        _rName = name2;
+    }
+
+    private Table GetTable(string name)
+    {
+        if (name == _lName) return _lTable;
+        if (name == _rName) return _rTable;
+        throw new ArgumentException($"Table with name {name} doesn't exists in current context");
+    }
+    
+    private SqlColumn GetColumn(Tuple<Word, Word> tuple) => 
+        GetTable(tuple.Item1.GetName()).FindColumn(tuple.Item2);
+    
+    
+    public Table InnerJoin(OnCondition condition)
+    {
+        var leftColumn = GetColumn(condition.LeftColName);
+        var rightColumn = GetColumn(condition.RightColName);
+        var lcTable = condition.LeftColName.Item1.GetName();
+        var rcTable = condition.RightColName.Item1.GetName();
+        for (int rL = 0; rL < _lTable._data.Length; ++rL)
+        {
+            var lRow = _lTable._data[rL];
+            for (int rR = 0; rR < _rTable._data.Length; ++rR)
+            {
+                var rRow = _rTable._data[rR];
+                if (leftColumn.ValueAtRow(lcTable.Equals(_lName)? rL : rR)
+                    .CompareWith(condition.Op, rightColumn.ValueAtRow(rcTable.Equals(_lName)? rL : rR)))
+                    AddRow(lRow.Concat(rRow).ToArray());
+            }
+        }
+        return this;
+    }
+    public Table LeftJoin(OnCondition condition)
+    {
+        var leftColumn = GetColumn(condition.LeftColName);
+        var rightColumn = GetColumn(condition.RightColName);
+        var lcTable = condition.LeftColName.Item1.GetName();
+        var rcTable = condition.RightColName.Item1.GetName();
+        var nulls = new ISqlValue[_rTable.Columns.Length];
+        Array.Fill(nulls, SqlNull.Instance);
+        for (int rL = 0; rL < _lTable._data.Length; ++rL)
+        {
+            bool shouldAddNull = true;
+            var lRow = _lTable._data[rL];
+            for (int rR = 0; rR < _rTable._data.Length; ++rR)
+            {
+                var rRow = _rTable._data[rR];
+                if (leftColumn.ValueAtRow(lcTable.Equals(_lName)? rL : rR)
+                    .CompareWith(condition.Op, rightColumn.ValueAtRow(rcTable.Equals(_lName)? rL : rR)))
+                {
+                    AddRow(lRow.Concat(rRow).ToArray());
+                    shouldAddNull = false;
+                }
+            }
+            if (shouldAddNull) AddRow(lRow.Concat(nulls).ToArray());;
+        }
+        return this;
+    }
+    public Table RightJoin(OnCondition condition)
+    {
+        var leftColumn = GetColumn(condition.LeftColName);
+        var rightColumn = GetColumn(condition.RightColName);
+        var lcTable = condition.LeftColName.Item1.GetName();
+        var rcTable = condition.RightColName.Item1.GetName();
+        var nulls = new ISqlValue[_lTable.Columns.Length];
+        Array.Fill(nulls, SqlNull.Instance);
+        for (int rR = 0; rR < _rTable._data.Length; ++rR)
+        {
+            bool shouldAddNull = true;
+            var rRow = _rTable._data[rR];
+            for (int rL = 0; rL < _lTable._data.Length; ++rL)
+            {
+                var lRow = _lTable._data[rL];
+                if (leftColumn.ValueAtRow(lcTable.Equals(_lName)? rL : rR)
+                    .CompareWith(condition.Op, rightColumn.ValueAtRow(rcTable.Equals(_lName)? rL : rR)))
+                {
+                    AddRow(lRow.Concat(rRow).ToArray());
+                    shouldAddNull = false;
+                }
+            }
+            if (shouldAddNull) AddRow(nulls.Concat(rRow).ToArray());;
+        }
+        return this;
+    }
+    
+}

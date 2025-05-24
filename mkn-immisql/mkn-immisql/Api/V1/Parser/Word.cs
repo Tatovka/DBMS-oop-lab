@@ -48,6 +48,17 @@ public class Word : IParserNode
     public bool IsName => (_value[0] == '"' && _value.Last() == '"') || NameFormat.IsMatch(_value);
     public bool IsKeyword => Keyword.KeywordList.Contains(this);
 
+    public bool IsCommandName => Keyword.CommandNames.Contains(this);
+
+    public Tuple<Word, Word> SplitTableCol
+    {
+        get
+        {
+            var splited = _value.Split('.', 2);
+            return new (new Word(splited[0]), new Word(splited[1]));
+        }
+    }
+
     public override int GetHashCode()
     {
         return _value.ToLowerInvariant().GetHashCode();
