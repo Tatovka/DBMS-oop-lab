@@ -13,6 +13,7 @@ public class ServiceContext
     }
     private ServiceContext()
     {
-        TerminationToken = new TerminateToken(Guid.NewGuid().ToString("N"));
+        TerminationToken = new TerminateToken();
+        TerminationToken.Token = Guid.NewGuid().ToString("N");
     }
 }

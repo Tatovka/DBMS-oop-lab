@@ -87,17 +87,18 @@ public class Table
         return result;
     }
 
-    public String[][] Rows
+    public String?[][] Rows
     {
         get
         {
-            var result = new String[RowCount][];
+            var result = new String?[RowCount][];
             for (int row = 0; row < RowCount; row++)
             {
-                result[row] = new string[Columns.Length];
+                result[row] = new string?[Columns.Length];
                 for (int col = 0; col < Columns.Length; col++)
                 {
                     result[row] [col] = Columns[col].AtRow(row);
+                    if (result[row][col]!.Equals("null")) result[row][col] = null;
                 }
             }
             return result;
