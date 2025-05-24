@@ -51,7 +51,6 @@ public class Keyword
         new ("Where"),
         new ("Returning"),
         new ("From"),
-        new ("Default"),
         new ("Set"),
     };
 

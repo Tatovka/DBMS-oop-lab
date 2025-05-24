@@ -90,10 +90,6 @@ public class SqlColumn
         IsPKey = isPKey;
         _defaultValue = defaultValue;
     }
-    public void AddRow(Word value)
-    {
-        _rows.Add(Type.Parse(value));
-    }
 
     public void AddRow(ISqlValue value)
     {
@@ -106,21 +102,23 @@ public class SqlColumn
     
     public virtual ISqlValue Parse(Word word)
     {
-        ISqlValue parsedValue;
-        if (word.Equals("Default"))
+        if (word.Equals(Word.Default))
         {
             if (_defaultValue.IsSpecified)
-                parsedValue = _defaultValue.Value;
-            else if (Type is SqlSerial)
-                parsedValue = Type.Parse(word);
-            else throw new Exception("Cannot assign default value, it is not specified");
+                return _defaultValue.Value; 
+            throw new Exception("Cannot assign default value, it is not specified");
         }
-        else parsedValue = Type.Parse(word);
+        return Type.Parse(word);
+    }
+    
+    public ISqlValue AddParse(Word word)
+    {
+        ISqlValue parsedValue = Parse(word);
         if (IsPKey && _rows.Contains(parsedValue)) throw new PrimaryKeyException();
         _rows.Add(parsedValue);
         return parsedValue;
     }
-
+    
     public TableSchemaColumnInfo GetSchema()
     {
         TableSchemaColumnInfo result = new ();
@@ -182,21 +180,21 @@ public class SqlColumn
 
     public void UpdateRows(Word value, Int32[] indexes)
     {
-        ISqlValue val = Type.Parse(value);
+        ISqlValue parsedValue = Parse(value);
         foreach (var index in indexes)
         {
             if (IsPKey)
             {
-                int ind = _rows.IndexOf(val);
+                int ind = _rows.IndexOf(parsedValue);
                 if (ind != -1 && ind != index) throw new PrimaryKeyException();
             }
-            _rows[index] = val;
+            _rows[index] = parsedValue;
         }
     }
 
     public SqlColumn JoinCopy(String tableName, bool nullable)
     {
-        var result = new SqlColumn(Type.GetNullable, $"{tableName}.{Name}", false, _defaultValue);
+        var result = new SqlColumn(nullable ? Type.GetNullable : Type, $"{tableName}.{Name}", false, _defaultValue);
         return result;
     }
 }
@@ -210,9 +208,8 @@ public class SerialColumn : SqlColumn
 
     public override ISqlValue Parse(Word word)
     {
-        if (!word.Equals(Word.Default)) throw new ArgumentException("Serial value sets automatically");
-        _rows.Add(Type.Parse(new Word($"{++_curValue}")));
-        return _rows.Last();
+        if (!word.Equals(Word.Default)) throw new ArgumentException("Serial value must sets automatically");
+        return Type.Parse(new Word($"{++_curValue}"));
     }
     public override SqlColumn CopyThis()
     {

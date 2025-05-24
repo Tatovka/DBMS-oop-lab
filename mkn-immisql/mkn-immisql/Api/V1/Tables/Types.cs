@@ -42,7 +42,7 @@ public class SqlValueComparer : IComparer<ISqlValue>
 }
 public readonly struct SqlNull : ISqlValue
 {
-    public string Value => "NULL";
+    public string Value => "null";
 
     public static SqlNull Instance { get; } = new();
     public SqlNull() { }
@@ -78,7 +78,7 @@ public class SqlBoolean : SqlType
     public override String TypeName => "boolean";
     public override ISqlValue Parse(Word word)
     {
-        if (word.Equals("NULL"))
+        if (word.Equals("null"))
         {
             if (IsNullable) return SqlNull.Instance;
             throw new Exception($"Cannot assign null to non-nullable {TypeName}");

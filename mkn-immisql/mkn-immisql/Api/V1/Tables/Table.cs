@@ -20,7 +20,7 @@ public class Table
         if (words.Count != Columns.Length) throw new ArgumentException("words.Count != Columns.Length");
         ISqlValue[] row = new ISqlValue[Columns.Length];
         for (int i = 0; i < Columns.Length; i++)
-            row[i] = Columns[i].Parse(words.ElementAt(i));
+            row[i] = Columns[i].AddParse(words.ElementAt(i));
         _data = _data.Append(row).ToArray();
         RowCount++;
     }
