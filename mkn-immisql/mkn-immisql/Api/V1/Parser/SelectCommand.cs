@@ -82,6 +82,8 @@ public class SelectCommand : ParserIterator, ICommand
                     _workingTable = Parser.GetCommand(new Block(this));
                     return;
                 }
+
+                MoveBack();
                 _workingTable = new NameCommand(word);
             }
             
